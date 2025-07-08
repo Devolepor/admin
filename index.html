@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة تحكم الطلاب</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #1976d2;
+      --primary-dark: #125ea5;
+      --danger-color: #e53935;
+      --success-color: #43a047;
+      --text-color: #2d3748;
+      --light-bg: #f8fafc;
+      --white: #ffffff;
+      --gray-light: #e2e8f0;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: var(--light-bg);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .header h1 {
+      color: var(--primary-color);
+      font-size: 28px;
+      font-weight: 700;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .grade-select {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    input, button, select {
+      padding: 12px 15px;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-light);
+      font-family: 'Tajawal', sans-serif;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+    
+    .control-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+    
+    th, td {
+      border: 1px solid var(--gray-light);
+      padding: 12px 15px;
+      text-align: center;
+      font-size: 15px;
+    }
+    
+    th {
+      background-color: var(--primary-color);
+      color: var(--white);
+      font-weight: 500;
+    }
+    
+    tr:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .btn {
+      background-color: var(--primary-color);
+      color: var(--white);
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    
+    .btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+    
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+    }
+    
+    .btn-danger:hover {
+      background-color: #c62828;
+    }
+    
+    .btn-success {
+      background-color: var(--success-color);
+    }
+    
+    .btn-success:hover {
+      background-color: #2e7d32;
+    }
+    
+    .login-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--white) 0%, var(--light-bg) 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .login-box {
+      background: var(--white);
+      padding: 40px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .login-box h2 {
+      margin-bottom: 25px;
+      color: var(--primary-color);
+      font-size: 24px;
+    }
+    
+    .login-box input {
+      margin-bottom: 20px;
+    }
+    
+    #studentsCount {
+      text-align: center;
+      font-weight: bold;
+      margin: 20px 0;
+      color: var(--text-color);
+      font-size: 18px;
+      background: var(--white);
+      padding: 15px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(3px);
+    }
+    
+    .modal-content {
+      background-color: var(--white);
+      margin: 5% auto;
+      padding: 25px;
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    
+    .close {
+      color: #aaa;
+      position: absolute;
+      right: 20px;
+      top: 15px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close:hover {
+      color: var(--text-color);
+    }
+    
+    .modal-body {
+      padding: 20px 0;
+    }
+    
+    .modal-footer {
+      text-align: left;
+      padding-top: 20px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .modal-title {
+      margin-top: 0;
+      color: var(--primary-color);
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    .attendance-select, .fee-checkbox {
+      margin: 5px 0;
+    }
+    
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .grade-select {
+        width: 100%;
+      }
+      
+      .grade-select button {
+        width: 100%;
+      }
+      
+      .modal-content {
+        width: 95%;
+        margin: 10% auto;
+      }
+      
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+      
+      .control-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .login-box {
+        padding: 30px 20px;
+      }
+      
+      .modal-footer {
+        flex-direction: column;
+      }
+      
+      .modal-footer button {
+        width: 100%;
+      }
+    }
+    
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: var(--white);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: var(--gray-light);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <h2>🔒 تسجيل الدخول</h2>
+      <input type="password" id="loginPassword" placeholder="ادخل كلمة المرور">
+      <button class="btn btn-success" onclick="checkLogin()">دخول</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Modal for Add/Edit Student -->
+    <div id="studentModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 class="modal-title" id="modalTitle">إضافة طالب</h3>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="studentId">كود الطالب</label>
+            <input type="text" id="studentId" placeholder="أدخل كود الطالب">
+          </div>
+          <div class="form-group">
+            <label for="studentName">اسم الطالب</label>
+            <input type="text" id="studentName" placeholder="أدخل اسم الطالب">
+          </div>
+          <div class="form-group">
+            <label for="studentGrade">الصف</label>
+            <select id="studentGrade">
+              <option value="" disabled selected>اختر الصف</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="studentLevel">المستوى</label>
+            <select id="studentLevel">
+              <option value="" disabled selected>اختر المستوى</option>
+              <option value="ضعيف">ضعيف</option>
+              <option value="مقبول">مقبول</option>
+              <option value="جيد">جيد</option>
+              <option value="جيد جدا">جيد جدا</option>
+              <option value="ممتاز">ممتاز</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">إلغاء</button>
+          <button class="btn btn-success" id="saveStudentBtn">حفظ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Grade Selection -->
+    <div id="gradeModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 class="modal-title">اختر الصف لعرض الطلاب</h3>
+        <div class="modal-body">
+          <select id="gradeSelect">
+            <option value="">عرض جميع الطلاب</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">إلغاء</button>
+          <button class="btn" onclick="filterByGrade()">عرض</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for Delete Confirmation -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 class="modal-title">تأكيد الحذف</h3>
+        <div class="modal-body">
+          <p id="deleteMessage">هل أنت متأكد من حذف هذا الطالب؟</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">إلغاء</button>
+          <button class="btn btn-danger" onclick="confirmDelete()">نعم، احذف</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="header">
+      <h1>📚 لوحة تحكم الطلاب</h1>
+      <div class="grade-select">
+        <button onclick="showGradeModal()">📘 اختر الصف</button>
+        <button onclick="renderTable()">📄 عرض الكل</button>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <input type="text" id="token" placeholder="🔑 GitHub Token">
+      <input type="text" id="searchId" placeholder="🔍 كود الطالب">
+      <button class="btn" onclick="searchStudent()">بحث</button>
+      <button class="btn btn-success" onclick="showAddModal()">➕ إضافة طالب</button>
+      <button class="btn" onclick="openFile()">📂 فتح ملف</button>
+      <button class="btn" onclick="saveToGitHub()">💾 حفظ</button>
+    </div>
+
+    <div id="studentsCount"></div>
+    <div id="studentsTable"></div>
+  </div>
+
+<script>
+let students = {};
+let sha = "";
+const owner = "Devolepor";
+const repo = "app";
+const path = "students.json";
+const branch = "main";
+const PASSWORD = "0101356859001223277310";
+let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
+let currentStudentId = null;
+let deleteStudentId = null;
+let isLoading = false;
+
+const grades = [
+  "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
+  "الصف الرابع الابتدائي", "الصف الخامس الابتدائي", "الصف السادس الابتدائي",
+  "الصف الأول الإعدادي", "الصف الثاني الإعدادي", "الصف الثالث الإعدادي",
+  "الصف الأول الثانوي", "الصف الثاني الثانوي", "الصف الثالث الثانوي"
+];
+
+const levels = ["ضعيف", "مقبول", "جيد", "جيد جدا", "ممتاز"];
+
+// أيام الأسبوع وأشهر السنة للاستخدام في الجدول
+const weekDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+const months = ["أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر", "يناير", "فبراير", "مارس", "أبريل"];
+
+if (localStorage.getItem("gh_token")) {
+  document.getElementById("token").value = localStorage.getItem("gh_token");
+}
+
+function checkLogin() {
+  const pass = document.getElementById("loginPassword").value;
+  if (pass === PASSWORD) {
+    document.getElementById("loginScreen").style.display = "none";
+    loadStudents();
+  } else {
+    Swal.fire({
+      title: 'خطأ!',
+      text: 'كلمة مرور خاطئة!',
+      icon: 'error',
+      confirmButtonText: 'حسناً'
+    });
+  }
+}
+
+async function loadStudents() {
+  try {
+    showLoading(true);
+    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
+    if (!res.ok) throw new Error('فشل في تحميل البيانات');
+    
+    let data = await res.json();
+    sha = data.sha;
+    let decodedContent = decodeURIComponent(escape(atob(data.content)));
+    students = JSON.parse(decodedContent);
+    renderTable();
+  } catch (error) {
+    console.error("Error loading students:", error);
+    students = {};
+    renderTable();
+    Swal.fire({
+      title: 'تحذير',
+      text: 'لا يوجد بيانات حالية، سيتم إنشاء ملف جديد عند الحفظ',
+      icon: 'warning'
+    });
+  } finally {
+    showLoading(false);
+  }
+}
+
+function renderTable(filterGrade = null) {
+  let html = `
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>الكود</th>
+            <th>الاسم</th>
+            <th>الصف</th>
+            <th>المستوى</th>
+            <th>الحضور</th>
+            <th>المصروفات</th>
+            <th>تعديل</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  let count = 1;
+  let studentCount = 0;
+  
+  for (let id in students) {
+    let s = students[id];
+    if (filterGrade && s.main.trim() !== filterGrade.trim()) continue;
+
+    studentCount++;
+    
+    // تحضير بيانات الحضور
+    let attendanceHtml = weekDays.map(day => {
+      const status = s.attendance?.[day] || '-';
+      return `
+        <div class="attendance-select">
+          ${day}: 
+          <select onchange="updateAttendance('${id}','${day}',this.value)" style="padding: 5px; border-radius: 5px;">
+            <option value="حاضر" ${status === "حاضر" ? 'selected' : ''}>حاضر</option>
+            <option value="غائب" ${status === "غائب" ? 'selected' : ''}>غائب</option>
+            <option value="-" ${status === "-" ? 'selected' : ''}>-</option>
+          </select>
+        </div>
+      `;
+    }).join('');
+    
+    // تحضير بيانات المصروفات
+    let feesHtml = months.map(month => {
+      const paid = s.fees?.[month] || false;
+      return `
+        <div class="fee-checkbox">
+          ${month}: 
+          <input type="checkbox" onchange="updateFee('${id}','${month}',this.checked)" ${paid ? 'checked' : ''} 
+                 style="transform: scale(1.3); margin-right: 5px;">
+        </div>
+      `;
+    }).join('');
+    
+    html += `
+      <tr>
+        <td>${count++}</td>
+        <td>${id}</td>
+        <td>${s.name}</td>
+        <td>${s.main}</td>
+        <td>${s.info || '-'}</td>
+        <td>${attendanceHtml}</td>
+        <td>${feesHtml}</td>
+        <td><button class="btn" onclick="showEditModal('${id}')">✏️ تعديل</button></td>
+        <td><button class="btn btn-danger" onclick="showDeleteModal('${id}')">🗑️ حذف</button></td>
+      </tr>
+    `;
+  }
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('studentsTable').innerHTML = studentCount > 0 ? html : `
+    <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+      <h3 style="color: #666;">لا يوجد طلاب مسجلين حالياً</h3>
+      <button class="btn btn-success" onclick="showAddModal()" style="margin-top: 20px;">➕ إضافة طالب جديد</button>
+    </div>
+  `;
+  
+  document.getElementById('studentsCount').innerText = `📊 عدد الطلاب المعروضين: ${studentCount}`;
+}
+
+function updateAttendance(id, day, value) {
+  if (!students[id].attendance) {
+    students[id].attendance = {};
+  }
+  students[id].attendance[day] = value;
+}
+
+function updateFee(id, month, value) {
+  if (!students[id].fees) {
+    students[id].fees = {};
+  }
+  students[id].fees[month] = value;
+}
+
+function searchStudent() {
+  const id = document.getElementById('searchId').value.trim();
+  if (!id) {
+    Swal.fire({
+      title: 'تنبيه',
+      text: 'الرجاء إدخال كود الطالب للبحث',
+      icon: 'warning'
+    });
+    return;
+  }
+
+  if (students[id]) {
+    const student = students[id];
+    let attendanceList = weekDays.map(day => 
+      `<li>${day}: ${student.attendance?.[day] || '-'}</li>`
+    ).join('');
+    
+    let feesList = months.map(month => 
+      `<li>${month}: ${student.fees?.[month] ? '✅ مسددة' : '❌ غير مسددة'}</li>`
+    ).join('');
+    
+    Swal.fire({
+      title: '📄 بيانات الطالب',
+      html: `
+        <div style="text-align: right;">
+          <p><b>الكود:</b> ${id}</p>
+          <p><b>الاسم:</b> ${student.name}</p>
+          <p><b>الصف:</b> ${student.main}</p>
+          <p><b>المستوى:</b> ${student.info || '-'}</p>
+          <hr>
+          <h4>الحضور:</h4>
+          <ul>${attendanceList}</ul>
+          <h4>المصروفات:</h4>
+          <ul>${feesList}</ul>
+        </div>
+      `,
+      confirmButtonText: 'حسناً',
+      width: '600px'
+    });
+  } else {
+    Swal.fire({
+      title: '⚠️ تنبيه',
+      text: 'لم يتم العثور على الطالب',
+      confirmButtonText: 'حسناً'
+    });
+  }
+}
+
+function openFile() {
+  window.open(githubFileUrl, '_blank');
+}
+
+function showGradeModal() {
+  const gradeSelect = document.getElementById('gradeSelect');
+  gradeSelect.innerHTML = '<option value="">عرض جميع الطلاب</option>';
+  grades.forEach(grade => {
+    gradeSelect.innerHTML += `<option value="${grade}">${grade}</option>`;
+  });
+  document.getElementById('gradeModal').style.display = 'block';
+}
+
+function filterByGrade() {
+  const gradeSelect = document.getElementById('gradeSelect');
+  const selectedGrade = gradeSelect.value;
+  renderTable(selectedGrade);
+  closeModal();
+}
+
+function showAddModal() {
+  currentStudentId = null;
+  document.getElementById('modalTitle').textContent = 'إضافة طالب جديد';
+  document.getElementById('studentId').value = '';
+  document.getElementById('studentName').value = '';
+  document.getElementById('studentLevel').value = '';
+  
+  const gradeSelect = document.getElementById('studentGrade');
+  gradeSelect.innerHTML = '<option value="" disabled selected>اختر الصف</option>';
+  grades.forEach(grade => {
+    gradeSelect.innerHTML += `<option value="${grade}">${grade}</option>`;
+  });
+  
+  document.getElementById('saveStudentBtn').onclick = saveStudent;
+  document.getElementById('studentModal').style.display = 'block';
+  
+  // Focus on first input
+  setTimeout(() => {
+    document.getElementById('studentId').focus();
+  }, 100);
+}
+
+function showEditModal(id) {
+  currentStudentId = id;
+  const student = students[id];
+  
+  document.getElementById('modalTitle').textContent = `تعديل بيانات الطالب ${id}`;
+  document.getElementById('studentId').value = id;
+  document.getElementById('studentName').value = student.name;
+  
+  const gradeSelect = document.getElementById('studentGrade');
+  gradeSelect.innerHTML = '';
+  grades.forEach(grade => {
+    gradeSelect.innerHTML += `<option value="${grade}" ${grade === student.main ? 'selected' : ''}>${grade}</option>`;
+  });
+  
+  const levelSelect = document.getElementById('studentLevel');
+  levelSelect.innerHTML = '<option value="" disabled>اختر المستوى</option>';
+  levels.forEach(level => {
+    levelSelect.innerHTML += `<option value="${level}" ${level === student.info ? 'selected' : ''}>${level}</option>`;
+  });
+  
+  document.getElementById('saveStudentBtn').onclick = saveStudent;
+  document.getElementById('studentModal').style.display = 'block';
+}
+
+function showDeleteModal(id) {
+  deleteStudentId = id;
+  const student = students[id];
+  document.getElementById('deleteMessage').innerHTML = `
+    <p>هل أنت متأكد من حذف الطالب التالي؟</p>
+    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px;">
+      <p><strong>الكود:</strong> ${id}</p>
+      <p><strong>الاسم:</strong> ${student.name}</p>
+      <p><strong>الصف:</strong> ${student.main}</p>
+    </div>
+    <p style="color: var(--danger-color); margin-top: 10px;">هذا الإجراء لا يمكن التراجع عنه!</p>
+  `;
+  document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('studentModal').style.display = 'none';
+  document.getElementById('gradeModal').style.display = 'none';
+  document.getElementById('deleteModal').style.display = 'none';
+}
+
+function saveStudent() {
+  const id = document.getElementById('studentId').value.trim();
+  const name = document.getElementById('studentName').value.trim();
+  const grade = document.getElementById('studentGrade').value;
+  const level = document.getElementById('studentLevel').value;
+  
+  if (!id) {
+    showError('يجب إدخال كود الطالب');
+    document.getElementById('studentId').focus();
+    return;
+  }
+  
+  if (!name) {
+    showError('يجب إدخال اسم الطالب');
+    document.getElementById('studentName').focus();
+    return;
+  }
+  
+  if (!grade) {
+    showError('يجب اختيار الصف');
+    document.getElementById('studentGrade').focus();
+    return;
+  }
+  
+  if (currentStudentId === null && students[id]) {
+    showError('كود الطالب موجود مسبقاً');
+    document.getElementById('studentId').focus();
+    return;
+  }
+  
+  if (currentStudentId === null) {
+    // Add new student
+    students[id] = {
+      name,
+      main: grade,
+      info: level,
+      attendance: Object.fromEntries(weekDays.map(day => [day, "-"])),
+      fees: Object.fromEntries(months.map(month => [month, false]))
+    };
+  } else {
+    // Update existing student
+    if (currentStudentId !== id) {
+      // If ID changed, we need to create new entry and delete old one
+      students[id] = {
+        name,
+        main: grade,
+        info: level,
+        attendance: {...students[currentStudentId].attendance},
+        fees: {...students[currentStudentId].fees}
+      };
+      delete students[currentStudentId];
+    } else {
+      // Just update the existing student
+      students[id].name = name;
+      students[id].main = grade;
+      students[id].info = level;
+    }
+  }
+  
+  renderTable();
+  closeModal();
+  showSuccess('تم حفظ بيانات الطالب بنجاح');
+}
+
+function confirmDelete() {
+  if (deleteStudentId) {
+    delete students[deleteStudentId];
+    renderTable();
+    closeModal();
+    showSuccess('تم حذف الطالب بنجاح');
+    deleteStudentId = null;
+  }
+}
+
+async function saveToGitHub() {
+  const token = document.getElementById('token').value.trim();
+  if (!token) {
+    showError('الرجاء إدخال توكن GitHub أولاً');
+    document.getElementById('token').focus();
+    return;
+  }
+  localStorage.setItem("gh_token", token);
+
+  const content = JSON.stringify(students, null, 2);
+  const utf8Content = unescape(encodeURIComponent(content));
+  const encoded = btoa(utf8Content);
+
+  try {
+    showLoading(true);
+    const saveBtn = document.querySelector('button[onclick="saveToGitHub()"]');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="spinner"></span> جاري الحفظ...';
+    saveBtn.disabled = true;
+    
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: "تحديث بيانات الطلاب من لوحة التحكم",
+        content: encoded,
+        sha: sha,
+        branch: branch
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      sha = data.content.sha;
+      showSuccess('تم حفظ البيانات بنجاح على GitHub');
+      loadStudents();
+    } else {
+      const error = await res.json();
+      showError(`فشل في الحفظ! ${error.message}`);
+    }
+  } catch (error) {
+    showError(`خطأ في الاتصال: ${error.message}`);
+  } finally {
+    showLoading(false);
+    const saveBtn = document.querySelector('button[onclick="saveToGitHub()"]');
+    if (saveBtn) {
+      saveBtn.innerHTML = originalText;
+      saveBtn.disabled = false;
+    }
+  }
+}
+
+function showLoading(show) {
+  isLoading = show;
+  const loader = document.createElement('div');
+  loader.id = 'loadingOverlay';
+  loader.style.position = 'fixed';
+  loader.style.top = '0';
+  loader.style.left = '0';
+  loader.style.width = '100%';
+  loader.style.height = '100%';
+  loader.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  loader.style.display = 'flex';
+  loader.style.justifyContent = 'center';
+  loader.style.alignItems = 'center';
+  loader.style.zIndex = '9998';
+  loader.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 12px; text-align: center;">
+      <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 15px;"></div>
+      <p style="font-weight: bold;">جاري التحميل...</p>
+    </div>
+  `;
+  
+  if (show) {
+    document.body.appendChild(loader);
+  } else {
+    const existingLoader = document.getElementById('loadingOverlay');
+    if (existingLoader) {
+      existingLoader.remove();
+    }
+  }
+}
+
+function showError(message) {
+  Swal.fire({
+    title: '❌ خطأ',
+    text: message,
+    icon: 'error',
+    confirmButtonText: 'حسناً'
+  });
+}
+
+function showSuccess(message) {
+  Swal.fire({
+    title: '✅ تم بنجاح',
+    text: message,
+    icon: 'success',
+    confirmButtonText: 'حسناً'
+  });
+}
+
+// Initialize when page loads
+window.onload = function() {
+  // Check if already logged in
+  if (localStorage.getItem('isLoggedIn') === 'true') {
+    document.getElementById('loginScreen').style.display = 'none';
+    loadStudents();
+  }
+  
+  // Focus on password field if not logged in
+  if (document.getElementById('loginScreen').style.display !== 'none') {
+    document.getElementById('loginPassword').focus();
+  }
+};
+
+// Handle login
+function checkLogin() {
+  const pass = document.getElementById("loginPassword").value;
+  if (pass === PASSWORD) {
+    localStorage.setItem('isLoggedIn', 'true');
+    document.getElementById("loginScreen").style.display = "none";
+    loadStudents();
+  } else {
+    Swal.fire({
+      title: 'خطأ!',
+      text: 'كلمة مرور خاطئة!',
+      icon: 'error',
+      confirmButtonText: 'حسناً'
+    });
+  }
+}
+</script>
+</body>
+</html>
