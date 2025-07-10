@@ -3,21 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الطلاب</title>
+  <title>لوحة تحكم الطلاب - النظام المتطور</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary-color: #1976d2;
       --primary-dark: #125ea5;
       --danger-color: #e53935;
+      --warning-color: #ff9800;
       --success-color: #43a047;
       --text-color: #2d3748;
+      --text-light: #4a5568;
       --light-bg: #f8fafc;
       --white: #ffffff;
       --gray-light: #e2e8f0;
+      --gray-dark: #cbd5e0;
       --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       --radius: 12px;
+      --transition: all 0.3s ease;
+    }
+
+    /* Dark Mode Variables */
+    .dark-mode {
+      --primary-color: #4299e1;
+      --primary-dark: #3182ce;
+      --danger-color: #fc8181;
+      --warning-color: #f6ad55;
+      --success-color: #68d391;
+      --text-color: #e2e8f0;
+      --text-light: #a0aec0;
+      --light-bg: #1a202c;
+      --white: #2d3748;
+      --gray-light: #4a5568;
+      --gray-dark: #2d3748;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     }
     
     * {
@@ -34,6 +58,7 @@
       padding: 0;
       margin: 0;
       min-height: 100vh;
+      transition: var(--transition);
     }
     
     .container {
@@ -63,6 +88,12 @@
       gap: 10px;
     }
     
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
     .grade-select {
       display: flex;
       gap: 10px;
@@ -75,8 +106,10 @@
       border: 1px solid var(--gray-light);
       font-family: 'Tajawal', sans-serif;
       font-size: 16px;
-      transition: all 0.3s ease;
+      transition: var(--transition);
       width: 100%;
+      background-color: var(--white);
+      color: var(--text-color);
     }
     
     input:focus, select:focus {
@@ -120,7 +153,7 @@
     }
     
     tr:hover {
-      background-color: rgba(0, 0, 0, 0.03);
+      background-color: rgba(0, 0, 0, 0.05);
     }
     
     .btn {
@@ -134,6 +167,7 @@
       justify-content: center;
       gap: 8px;
       white-space: nowrap;
+      transition: var(--transition);
     }
     
     .btn:hover {
@@ -159,6 +193,14 @@
     
     .btn-success:hover {
       background-color: #2e7d32;
+    }
+    
+    .btn-warning {
+      background-color: var(--warning-color);
+    }
+    
+    .btn-warning:hover {
+      background-color: #e65100;
     }
     
     .login-screen {
@@ -230,13 +272,14 @@
     }
     
     .close {
-      color: #aaa;
+      color: var(--text-light);
       position: absolute;
       right: 20px;
       top: 15px;
       font-size: 28px;
       font-weight: bold;
       cursor: pointer;
+      transition: var(--transition);
     }
     
     .close:hover {
@@ -277,11 +320,80 @@
       margin: 5px 0;
     }
     
+    /* Dark mode toggle */
+    .theme-toggle {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-color);
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    
+    .theme-toggle:hover {
+      background-color: rgba(0,0,0,0.1);
+    }
+    
+    /* Export dropdown */
+    .export-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .export-btn {
+      background-color: var(--warning-color);
+    }
+    
+    .export-btn:hover {
+      background-color: #e65100;
+    }
+    
+    .export-content {
+      display: none;
+      position: absolute;
+      background-color: var(--white);
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: var(--radius);
+      overflow: hidden;
+      right: 0;
+      margin-top: 5px;
+    }
+    
+    .export-content a {
+      color: var(--text-color);
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      text-align: right;
+      transition: var(--transition);
+    }
+    
+    .export-content a:hover {
+      background-color: var(--gray-light);
+    }
+    
+    .export-dropdown:hover .export-content {
+      display: block;
+    }
+    
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+      }
+      
+      .header-actions {
+        width: 100%;
       }
       
       .grade-select {
@@ -304,6 +416,11 @@
       
       .control-panel {
         grid-template-columns: 1fr;
+      }
+      
+      .export-content {
+        right: auto;
+        left: 0;
       }
     }
     
@@ -359,9 +476,9 @@
 <body>
   <div class="login-screen" id="loginScreen">
     <div class="login-box">
-      <h2>🔒 تسجيل الدخول</h2>
+      <h2><i class="fas fa-lock"></i> تسجيل الدخول</h2>
       <input type="password" id="loginPassword" placeholder="ادخل كلمة المرور">
-      <button class="btn btn-success" onclick="checkLogin()">دخول</button>
+      <button class="btn btn-success" onclick="checkLogin()"><i class="fas fa-sign-in-alt"></i> دخول</button>
     </div>
   </div>
 
@@ -370,24 +487,24 @@
     <div id="studentModal" class="modal">
       <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h3 class="modal-title" id="modalTitle">إضافة طالب</h3>
+        <h3 class="modal-title" id="modalTitle"><i class="fas fa-user-plus"></i> إضافة طالب</h3>
         <div class="modal-body">
           <div class="form-group">
-            <label for="studentId">كود الطالب</label>
+            <label for="studentId"><i class="fas fa-id-card"></i> كود الطالب</label>
             <input type="text" id="studentId" placeholder="أدخل كود الطالب">
           </div>
           <div class="form-group">
-            <label for="studentName">اسم الطالب</label>
+            <label for="studentName"><i class="fas fa-user"></i> اسم الطالب</label>
             <input type="text" id="studentName" placeholder="أدخل اسم الطالب">
           </div>
           <div class="form-group">
-            <label for="studentGrade">الصف</label>
+            <label for="studentGrade"><i class="fas fa-graduation-cap"></i> الصف</label>
             <select id="studentGrade">
               <option value="" disabled selected>اختر الصف</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="studentLevel">المستوى</label>
+            <label for="studentLevel"><i class="fas fa-star"></i> المستوى</label>
             <select id="studentLevel">
               <option value="" disabled selected>اختر المستوى</option>
               <option value="ضعيف">ضعيف</option>
@@ -399,8 +516,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal()">إلغاء</button>
-          <button class="btn btn-success" id="saveStudentBtn">حفظ</button>
+          <button class="btn" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
+          <button class="btn btn-success" id="saveStudentBtn"><i class="fas fa-save"></i> حفظ</button>
         </div>
       </div>
     </div>
@@ -409,15 +526,15 @@
     <div id="gradeModal" class="modal">
       <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h3 class="modal-title">اختر الصف لعرض الطلاب</h3>
+        <h3 class="modal-title"><i class="fas fa-filter"></i> اختر الصف لعرض الطلاب</h3>
         <div class="modal-body">
           <select id="gradeSelect">
             <option value="">عرض جميع الطلاب</option>
           </select>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal()">إلغاء</button>
-          <button class="btn" onclick="filterByGrade()">عرض</button>
+          <button class="btn" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
+          <button class="btn" onclick="filterByGrade()"><i class="fas fa-eye"></i> عرض</button>
         </div>
       </div>
     </div>
@@ -426,32 +543,46 @@
     <div id="deleteModal" class="modal">
       <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h3 class="modal-title">تأكيد الحذف</h3>
+        <h3 class="modal-title"><i class="fas fa-trash-alt"></i> تأكيد الحذف</h3>
         <div class="modal-body">
           <p id="deleteMessage">هل أنت متأكد من حذف هذا الطالب؟</p>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal()">إلغاء</button>
-          <button class="btn btn-danger" onclick="confirmDelete()">نعم، احذف</button>
+          <button class="btn" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
+          <button class="btn btn-danger" onclick="confirmDelete()"><i class="fas fa-trash"></i> نعم، احذف</button>
         </div>
       </div>
     </div>
 
     <div class="header">
-      <h1>📚 لوحة تحكم الطلاب</h1>
-      <div class="grade-select">
-        <button onclick="showGradeModal()">📘 اختر الصف</button>
-        <button onclick="renderTable()">📄 عرض الكل</button>
+      <h1><i class="fas fa-user-graduate"></i> لوحة تحكم الطلاب</h1>
+      <div class="header-actions">
+        <div class="grade-select">
+          <button onclick="showGradeModal()"><i class="fas fa-filter"></i> اختر الصف</button>
+          <button onclick="renderTable()"><i class="fas fa-list"></i> عرض الكل</button>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="تبديل الوضع الليلي">
+          <i class="fas fa-moon"></i>
+        </button>
       </div>
     </div>
 
     <div class="control-panel">
       <input type="text" id="token" placeholder="🔑 GitHub Token">
       <input type="text" id="searchId" placeholder="🔍 كود الطالب">
-      <button class="btn" onclick="searchStudent()">بحث</button>
-      <button class="btn btn-success" onclick="showAddModal()">➕ إضافة طالب</button>
-      <button class="btn" onclick="openFile()">📂 فتح ملف</button>
-      <button class="btn" onclick="saveToGitHub()">💾 حفظ</button>
+      <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
+      <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
+      <button class="btn" onclick="openFile()"><i class="fas fa-folder-open"></i> فتح ملف</button>
+      <button class="btn" onclick="saveToGitHub()"><i class="fas fa-save"></i> حفظ</button>
+      <div class="export-dropdown">
+        <button class="btn export-btn"><i class="fas fa-file-export"></i> تصدير البيانات</button>
+        <div class="export-content">
+          <a href="#" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> تصدير PDF</a>
+          <a href="#" onclick="exportData('excel')"><i class="fas fa-file-excel"></i> تصدير Excel</a>
+          <a href="#" onclick="exportData('word')"><i class="fas fa-file-word"></i> تصدير Word</a>
+          <a href="#" onclick="exportData('json')"><i class="fas fa-file-code"></i> تصدير JSON</a>
+        </div>
+      </div>
     </div>
 
     <div id="studentsCount"></div>
@@ -459,6 +590,9 @@
   </div>
 
 <script>
+// Initialize jsPDF
+const { jsPDF } = window.jspdf;
+
 let students = {};
 let sha = "";
 const owner = "Devolepor";
@@ -470,6 +604,7 @@ let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`
 let currentStudentId = null;
 let deleteStudentId = null;
 let isLoading = false;
+let originalButtonText = "";
 
 const grades = [
   "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
@@ -484,13 +619,32 @@ const levels = ["ضعيف", "مقبول", "جيد", "جيد جدا", "ممتاز
 const weekDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 const months = ["أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر", "يناير", "فبراير", "مارس", "أبريل"];
 
+// Check for saved theme preference
+if (localStorage.getItem("theme") === "dark") {
+  document.body.classList.add("dark-mode");
+  document.getElementById("themeToggle").innerHTML = '<i class="fas fa-sun"></i>';
+}
+
 if (localStorage.getItem("gh_token")) {
   document.getElementById("token").value = localStorage.getItem("gh_token");
 }
 
+// Theme toggle functionality
+document.getElementById("themeToggle").addEventListener("click", function() {
+  document.body.classList.toggle("dark-mode");
+  if (document.body.classList.contains("dark-mode")) {
+    localStorage.setItem("theme", "dark");
+    this.innerHTML = '<i class="fas fa-sun"></i>';
+  } else {
+    localStorage.setItem("theme", "light");
+    this.innerHTML = '<i class="fas fa-moon"></i>';
+  }
+});
+
 function checkLogin() {
   const pass = document.getElementById("loginPassword").value;
   if (pass === PASSWORD) {
+    localStorage.setItem("isLoggedIn", "true");
     document.getElementById("loginScreen").style.display = "none";
     loadStudents();
   } else {
@@ -563,7 +717,7 @@ function renderTable(filterGrade = null) {
       return `
         <div class="attendance-select">
           ${day}: 
-          <select onchange="updateAttendance('${id}','${day}',this.value)" style="padding: 5px; border-radius: 5px;">
+          <select onchange="updateAttendance('${id}','${day}',this.value)" style="padding: 5px; border-radius: 5px; background: var(--white); color: var(--text-color);">
             <option value="حاضر" ${status === "حاضر" ? 'selected' : ''}>حاضر</option>
             <option value="غائب" ${status === "غائب" ? 'selected' : ''}>غائب</option>
             <option value="-" ${status === "-" ? 'selected' : ''}>-</option>
@@ -593,8 +747,8 @@ function renderTable(filterGrade = null) {
         <td>${s.info || '-'}</td>
         <td>${attendanceHtml}</td>
         <td>${feesHtml}</td>
-        <td><button class="btn" onclick="showEditModal('${id}')">✏️ تعديل</button></td>
-        <td><button class="btn btn-danger" onclick="showDeleteModal('${id}')">🗑️ حذف</button></td>
+        <td><button class="btn" onclick="showEditModal('${id}')"><i class="fas fa-edit"></i> تعديل</button></td>
+        <td><button class="btn btn-danger" onclick="showDeleteModal('${id}')"><i class="fas fa-trash"></i> حذف</button></td>
       </tr>
     `;
   }
@@ -606,13 +760,18 @@ function renderTable(filterGrade = null) {
   `;
   
   document.getElementById('studentsTable').innerHTML = studentCount > 0 ? html : `
-    <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      <h3 style="color: #666;">لا يوجد طلاب مسجلين حالياً</h3>
-      <button class="btn btn-success" onclick="showAddModal()" style="margin-top: 20px;">➕ إضافة طالب جديد</button>
+    <div style="text-align: center; padding: 40px; background: var(--white); border-radius: 12px; box-shadow: var(--shadow);">
+      <h3 style="color: var(--text-light);"><i class="fas fa-info-circle"></i> لا يوجد طلاب مسجلين حالياً</h3>
+      <button class="btn btn-success" onclick="showAddModal()" style="margin-top: 20px;"><i class="fas fa-user-plus"></i> إضافة طالب جديد</button>
     </div>
   `;
   
-  document.getElementById('studentsCount').innerText = `📊 عدد الطلاب المعروضين: ${studentCount}`;
+  document.getElementById('studentsCount').innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fas fa-users"></i> عدد الطلاب المعروضين: ${studentCount}</span>
+      <span><i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString('ar-EG')}</span>
+    </div>
+  `;
 }
 
 function updateAttendance(id, day, value) {
@@ -654,14 +813,14 @@ function searchStudent() {
       title: '📄 بيانات الطالب',
       html: `
         <div style="text-align: right;">
-          <p><b>الكود:</b> ${id}</p>
-          <p><b>الاسم:</b> ${student.name}</p>
-          <p><b>الصف:</b> ${student.main}</p>
-          <p><b>المستوى:</b> ${student.info || '-'}</p>
+          <p><b><i class="fas fa-id-card"></i> الكود:</b> ${id}</p>
+          <p><b><i class="fas fa-user"></i> الاسم:</b> ${student.name}</p>
+          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${student.main}</p>
+          <p><b><i class="fas fa-star"></i> المستوى:</b> ${student.info || '-'}</p>
           <hr>
-          <h4>الحضور:</h4>
+          <h4><i class="fas fa-calendar-check"></i> الحضور:</h4>
           <ul>${attendanceList}</ul>
-          <h4>المصروفات:</h4>
+          <h4><i class="fas fa-money-bill-wave"></i> المصروفات:</h4>
           <ul>${feesList}</ul>
         </div>
       `,
@@ -699,7 +858,7 @@ function filterByGrade() {
 
 function showAddModal() {
   currentStudentId = null;
-  document.getElementById('modalTitle').textContent = 'إضافة طالب جديد';
+  document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> إضافة طالب جديد';
   document.getElementById('studentId').value = '';
   document.getElementById('studentName').value = '';
   document.getElementById('studentLevel').value = '';
@@ -723,7 +882,7 @@ function showEditModal(id) {
   currentStudentId = id;
   const student = students[id];
   
-  document.getElementById('modalTitle').textContent = `تعديل بيانات الطالب ${id}`;
+  document.getElementById('modalTitle').innerHTML = `<i class="fas fa-user-edit"></i> تعديل بيانات الطالب ${id}`;
   document.getElementById('studentId').value = id;
   document.getElementById('studentName').value = student.name;
   
@@ -748,12 +907,12 @@ function showDeleteModal(id) {
   const student = students[id];
   document.getElementById('deleteMessage').innerHTML = `
     <p>هل أنت متأكد من حذف الطالب التالي؟</p>
-    <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-top: 10px;">
-      <p><strong>الكود:</strong> ${id}</p>
-      <p><strong>الاسم:</strong> ${student.name}</p>
-      <p><strong>الصف:</strong> ${student.main}</p>
+    <div style="background: var(--gray-light); padding: 10px; border-radius: 8px; margin-top: 10px;">
+      <p><strong><i class="fas fa-id-card"></i> الكود:</strong> ${id}</p>
+      <p><strong><i class="fas fa-user"></i> الاسم:</strong> ${student.name}</p>
+      <p><strong><i class="fas fa-graduation-cap"></i> الصف:</strong> ${student.main}</p>
     </div>
-    <p style="color: var(--danger-color); margin-top: 10px;">هذا الإجراء لا يمكن التراجع عنه!</p>
+    <p style="color: var(--danger-color); margin-top: 10px;"><i class="fas fa-exclamation-triangle"></i> هذا الإجراء لا يمكن التراجع عنه!</p>
   `;
   document.getElementById('deleteModal').style.display = 'block';
 }
@@ -854,7 +1013,7 @@ async function saveToGitHub() {
   try {
     showLoading(true);
     const saveBtn = document.querySelector('button[onclick="saveToGitHub()"]');
-    const originalText = saveBtn.innerHTML;
+    originalButtonText = saveBtn.innerHTML;
     saveBtn.innerHTML = '<span class="spinner"></span> جاري الحفظ...';
     saveBtn.disabled = true;
     
@@ -887,7 +1046,7 @@ async function saveToGitHub() {
     showLoading(false);
     const saveBtn = document.querySelector('button[onclick="saveToGitHub()"]');
     if (saveBtn) {
-      saveBtn.innerHTML = originalText;
+      saveBtn.innerHTML = originalButtonText;
       saveBtn.disabled = false;
     }
   }
@@ -908,9 +1067,9 @@ function showLoading(show) {
   loader.style.alignItems = 'center';
   loader.style.zIndex = '9998';
   loader.innerHTML = `
-    <div style="background: white; padding: 30px; border-radius: 12px; text-align: center;">
-      <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 15px;"></div>
-      <p style="font-weight: bold;">جاري التحميل...</p>
+    <div style="background: var(--white); padding: 30px; border-radius: 12px; text-align: center; box-shadow: var(--shadow);">
+      <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 15px; border-top-color: var(--primary-color);"></div>
+      <p style="font-weight: bold; color: var(--text-color);">جاري التحميل...</p>
     </div>
   `;
   
@@ -942,6 +1101,198 @@ function showSuccess(message) {
   });
 }
 
+// Export data functions
+function exportData(format) {
+  if (Object.keys(students).length === 0) {
+    showError('لا يوجد بيانات لتصديرها');
+    return;
+  }
+
+  switch(format) {
+    case 'pdf':
+      exportToPDF();
+      break;
+    case 'excel':
+      exportToExcel();
+      break;
+    case 'word':
+      exportToWord();
+      break;
+    case 'json':
+      exportToJSON();
+      break;
+    default:
+      showError('صيغة التصدير غير معروفة');
+  }
+}
+
+function exportToPDF() {
+  const doc = new jsPDF();
+  
+  // Add title
+  doc.setFont('Tajawal', 'normal');
+  doc.setTextColor(33, 150, 243);
+  doc.setFontSize(22);
+  doc.text('تقرير بيانات الطلاب', 105, 15, null, null, 'center');
+  
+  // Add date
+  doc.setFontSize(12);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')}`, 105, 25, null, null, 'center');
+  
+  let y = 35;
+  
+  // Add each student's data
+  Object.keys(students).forEach((id, index) => {
+    const student = students[id];
+    
+    // Start new page if needed
+    if (y > 250) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    // Student header
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`الطالب ${index + 1}: ${student.name} (${id})`, 14, y);
+    y += 10;
+    
+    // Basic info
+    doc.setFontSize(12);
+    doc.text(`الصف: ${student.main}`, 14, y);
+    doc.text(`المستوى: ${student.info || '-'}`, 100, y);
+    y += 8;
+    
+    // Attendance
+    doc.text('الحضور:', 14, y);
+    y += 8;
+    
+    let attendanceText = weekDays.map(day => {
+      return `${day}: ${student.attendance?.[day] || '-'}`;
+    }).join('، ');
+    
+    doc.text(attendanceText, 14, y, { maxWidth: 180 });
+    y += 10;
+    
+    // Fees
+    doc.text('المصروفات:', 14, y);
+    y += 8;
+    
+    let feesText = months.map(month => {
+      return `${month}: ${student.fees?.[month] ? 'مسددة' : 'غير مسددة'}`;
+    }).join('، ');
+    
+    doc.text(feesText, 14, y, { maxWidth: 180 });
+    y += 15;
+    
+    // Add separator
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, y, 196, y);
+    y += 5;
+  });
+  
+  // Save the PDF
+  doc.save('بيانات_الطلاب.pdf');
+}
+
+function exportToExcel() {
+  // Prepare data
+  const data = [];
+  
+  // Add headers
+  data.push([
+    'كود الطالب', 'الاسم', 'الصف', 'المستوى', 
+    ...weekDays.map(d => `حضور ${d}`),
+    ...months.map(m => `مصروفات ${m}`)
+  ]);
+  
+  // Add students data
+  Object.keys(students).forEach(id => {
+    const student = students[id];
+    const row = [
+      id,
+      student.name,
+      student.main,
+      student.info || '-',
+      ...weekDays.map(day => student.attendance?.[day] || '-'),
+      ...months.map(month => student.fees?.[month] ? 'مسددة' : 'غير مسددة')
+    ];
+    data.push(row);
+  });
+  
+  // Create worksheet
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "بيانات الطلاب");
+  
+  // Export to Excel
+  XLSX.writeFile(wb, "بيانات_الطلاب.xlsx");
+}
+
+function exportToWord() {
+  // Create HTML content
+  let html = `
+    <!DOCTYPE html>
+    <html dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <title>بيانات الطلاب</title>
+      <style>
+        body { font-family: 'Tajawal', sans-serif; }
+        h1 { color: #1976d2; text-align: center; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #1976d2; color: white; }
+      </style>
+    </head>
+    <body>
+      <h1>تقرير بيانات الطلاب</h1>
+      <p style="text-align: center;">تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')}</p>
+      <table>
+        <tr>
+          <th>#</th>
+          <th>الكود</th>
+          <th>الاسم</th>
+          <th>الصف</th>
+          <th>المستوى</th>
+        </tr>
+  `;
+  
+  // Add students data
+  let count = 1;
+  Object.keys(students).forEach(id => {
+    const student = students[id];
+    html += `
+      <tr>
+        <td>${count++}</td>
+        <td>${id}</td>
+        <td>${student.name}</td>
+        <td>${student.main}</td>
+        <td>${student.info || '-'}</td>
+      </tr>
+    `;
+  });
+  
+  html += `
+      </table>
+    </body>
+    </html>
+  `;
+  
+  // Create Blob and download
+  const blob = new Blob([html], { type: 'application/msword' });
+  saveAs(blob, 'بيانات_الطلاب.doc');
+}
+
+function exportToJSON() {
+  const dataStr = JSON.stringify(students, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  saveAs(blob, 'بيانات_الطلاب.json');
+}
+
 // Initialize when page loads
 window.onload = function() {
   // Check if already logged in
@@ -955,23 +1306,6 @@ window.onload = function() {
     document.getElementById('loginPassword').focus();
   }
 };
-
-// Handle login
-function checkLogin() {
-  const pass = document.getElementById("loginPassword").value;
-  if (pass === PASSWORD) {
-    localStorage.setItem('isLoggedIn', 'true');
-    document.getElementById("loginScreen").style.display = "none";
-    loadStudents();
-  } else {
-    Swal.fire({
-      title: 'خطأ!',
-      text: 'كلمة مرور خاطئة!',
-      icon: 'error',
-      confirmButtonText: 'حسناً'
-    });
-  }
-}
 </script>
 </body>
 </html>
