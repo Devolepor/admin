@@ -554,32 +554,6 @@
       </div>
     </div>
 
-    <!-- Modal for Change Password -->
-    <div id="passwordModal" class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <h3 class="modal-title"><i class="fas fa-key"></i> تغيير كلمة المرور</h3>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="currentPassword"><i class="fas fa-lock"></i> كلمة المرور الحالية</label>
-            <input type="password" id="currentPassword" placeholder="أدخل كلمة المرور الحالية">
-          </div>
-          <div class="form-group">
-            <label for="newPassword"><i class="fas fa-key"></i> كلمة المرور الجديدة</label>
-            <input type="password" id="newPassword" placeholder="أدخل كلمة المرور الجديدة">
-          </div>
-          <div class="form-group">
-            <label for="confirmPassword"><i class="fas fa-key"></i> تأكيد كلمة المرور الجديدة</label>
-            <input type="password" id="confirmPassword" placeholder="أعد إدخال كلمة المرور الجديدة">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
-          <button class="btn btn-success" onclick="changePassword()"><i class="fas fa-save"></i> حفظ التغييرات</button>
-        </div>
-      </div>
-    </div>
-
     <div class="header">
       <h1><i class="fas fa-user-graduate"></i> لوحة تحكم الطلاب</h1>
       <div class="header-actions">
@@ -594,12 +568,12 @@
     </div>
 
     <div class="control-panel">
+      <input type="text" id="token" placeholder="🔑 GitHub Token">
       <input type="text" id="searchId" placeholder="🔍 كود الطالب">
       <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
       <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
       <button class="btn" onclick="openFile()"><i class="fas fa-folder-open"></i> فتح ملف</button>
       <button class="btn" onclick="saveToGitHub()"><i class="fas fa-save"></i> حفظ</button>
-      <button class="btn btn-warning" onclick="showPasswordModal()"><i class="fas fa-key"></i> تغيير كلمة المرور</button>
       <div class="export-dropdown">
         <button class="btn export-btn"><i class="fas fa-file-export"></i> تصدير البيانات</button>
         <div class="export-content">
@@ -625,8 +599,7 @@ const owner = "Devolepor";
 const repo = "app";
 const path = "students.json";
 const branch = "main";
-let PASSWORD = "0101356859001223277310";
-const GITHUB_TOKEN = "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";
+const PASSWORD = "0101356859001223277310";
 let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
 let currentStudentId = null;
 let deleteStudentId = null;
@@ -650,6 +623,10 @@ const months = ["أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "�
 if (localStorage.getItem("theme") === "dark") {
   document.body.classList.add("dark-mode");
   document.getElementById("themeToggle").innerHTML = '<i class="fas fa-sun"></i>';
+}
+
+if (localStorage.getItem("gh_token")) {
+  document.getElementById("token").value = localStorage.getItem("gh_token");
 }
 
 // Theme toggle functionality
@@ -680,48 +657,10 @@ function checkLogin() {
   }
 }
 
-function showPasswordModal() {
-  document.getElementById("passwordModal").style.display = "block";
-}
-
-function changePassword() {
-  const currentPass = document.getElementById("currentPassword").value;
-  const newPass = document.getElementById("newPassword").value;
-  const confirmPass = document.getElementById("confirmPassword").value;
-  
-  if (currentPass !== PASSWORD) {
-    showError("كلمة المرور الحالية غير صحيحة");
-    return;
-  }
-  
-  if (newPass.length < 6) {
-    showError("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل");
-    return;
-  }
-  
-  if (newPass !== confirmPass) {
-    showError("كلمة المرور الجديدة غير متطابقة");
-    return;
-  }
-  
-  PASSWORD = newPass;
-  closeModal();
-  showSuccess("تم تغيير كلمة المرور بنجاح");
-  
-  // Clear password fields
-  document.getElementById("currentPassword").value = "";
-  document.getElementById("newPassword").value = "";
-  document.getElementById("confirmPassword").value = "";
-}
-
 async function loadStudents() {
   try {
     showLoading(true);
-    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`
-      }
-    });
+    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
     if (!res.ok) throw new Error('فشل في تحميل البيانات');
     
     let data = await res.json();
@@ -982,7 +921,6 @@ function closeModal() {
   document.getElementById('studentModal').style.display = 'none';
   document.getElementById('gradeModal').style.display = 'none';
   document.getElementById('deleteModal').style.display = 'none';
-  document.getElementById('passwordModal').style.display = 'none';
 }
 
 function saveStudent() {
@@ -1060,6 +998,14 @@ function confirmDelete() {
 }
 
 async function saveToGitHub() {
+  const token = document.getElementById('token').value.trim();
+  if (!token) {
+    showError('الرجاء إدخال توكن GitHub أولاً');
+    document.getElementById('token').focus();
+    return;
+  }
+  localStorage.setItem("gh_token", token);
+
   const content = JSON.stringify(students, null, 2);
   const utf8Content = unescape(encodeURIComponent(content));
   const encoded = btoa(utf8Content);
@@ -1074,7 +1020,7 @@ async function saveToGitHub() {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
