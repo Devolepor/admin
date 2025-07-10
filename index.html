@@ -568,7 +568,6 @@
     </div>
 
     <div class="control-panel">
-      <input type="text" id="token" placeholder="🔑 GitHub Token">
       <input type="text" id="searchId" placeholder="🔍 كود الطالب">
       <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
       <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
@@ -600,6 +599,8 @@ const repo = "app";
 const path = "students.json";
 const branch = "main";
 const PASSWORD = "0101356859001223277310";
+// GitHub Token embedded in the code
+const GITHUB_TOKEN = "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"; // استبدل هذا بالتوكن الفعلي
 let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
 let currentStudentId = null;
 let deleteStudentId = null;
@@ -623,10 +624,6 @@ const months = ["أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "�
 if (localStorage.getItem("theme") === "dark") {
   document.body.classList.add("dark-mode");
   document.getElementById("themeToggle").innerHTML = '<i class="fas fa-sun"></i>';
-}
-
-if (localStorage.getItem("gh_token")) {
-  document.getElementById("token").value = localStorage.getItem("gh_token");
 }
 
 // Theme toggle functionality
@@ -660,7 +657,11 @@ function checkLogin() {
 async function loadStudents() {
   try {
     showLoading(true);
-    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
+    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`
+      }
+    });
     if (!res.ok) throw new Error('فشل في تحميل البيانات');
     
     let data = await res.json();
@@ -998,14 +999,6 @@ function confirmDelete() {
 }
 
 async function saveToGitHub() {
-  const token = document.getElementById('token').value.trim();
-  if (!token) {
-    showError('الرجاء إدخال توكن GitHub أولاً');
-    document.getElementById('token').focus();
-    return;
-  }
-  localStorage.setItem("gh_token", token);
-
   const content = JSON.stringify(students, null, 2);
   const utf8Content = unescape(encodeURIComponent(content));
   const encoded = btoa(utf8Content);
@@ -1020,7 +1013,7 @@ async function saveToGitHub() {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${token}`,
+        'Authorization': `token ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
