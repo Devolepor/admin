@@ -385,6 +385,57 @@
       display: block;
     }
     
+    /* Social Share Buttons */
+    .share-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 15px;
+      border-radius: 5px;
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+      min-width: 120px;
+    }
+    
+    .share-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .share-btn i {
+      margin-left: 5px;
+    }
+    
+    .facebook {
+      background-color: #3b5998;
+    }
+    
+    .whatsapp {
+      background-color: #25D366;
+    }
+    
+    .telegram {
+      background-color: #0088cc;
+    }
+    
+    .twitter {
+      background-color: #1DA1F2;
+    }
+    
+    .link {
+      background-color: var(--primary-color);
+    }
+    
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -421,6 +472,15 @@
       .export-content {
         right: auto;
         left: 0;
+      }
+      
+      .share-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .share-btn {
+        width: 100%;
       }
     }
     
@@ -982,7 +1042,16 @@ function saveStudent() {
       fees: Object.fromEntries(months.map(month => [month, false]))
     };
     
-    // عرض رسالة بنجاح مع كود الطالب
+    // عرض رسالة بنجاح مع كود الطالب وخيارات المشاركة
+    const shareText = `تم تسجيل طالب جديد:
+الاسم: ${name}
+الصف: ${grade}
+المستوى: ${level || '-'}
+كود الطالب: ${id}`;
+    
+    const shareUrl = encodeURIComponent(window.location.href);
+    const encodedText = encodeURIComponent(shareText);
+    
     Swal.fire({
       title: 'تمت الإضافة بنجاح',
       html: `
@@ -991,10 +1060,29 @@ function saveStudent() {
           <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
           <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
           <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
+          
+          <div class="share-buttons">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
+               target="_blank" class="share-btn facebook">
+              <i class="fab fa-facebook-f"></i> فيسبوك
+            </a>
+            <a href="https://wa.me/?text=${encodedText}" 
+               target="_blank" class="share-btn whatsapp">
+              <i class="fab fa-whatsapp"></i> واتساب
+            </a>
+            <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
+               target="_blank" class="share-btn telegram">
+              <i class="fab fa-telegram-plane"></i> تيليجرام
+            </a>
+            <a href="#" onclick="copyStudentLink('${id}')" class="share-btn link">
+              <i class="fas fa-link"></i> نسخ الرابط
+            </a>
+          </div>
         </div>
       `,
       icon: 'success',
-      confirmButtonText: 'حسناً'
+      confirmButtonText: 'حسناً',
+      width: '700px'
     });
   } else {
     // Update existing student
@@ -1019,6 +1107,26 @@ function saveStudent() {
   
   renderTable();
   closeModal();
+}
+
+function copyStudentLink(id) {
+  const student = students[id];
+  const shareText = `بيانات الطالب:
+الاسم: ${student.name}
+الصف: ${student.main}
+المستوى: ${student.info || '-'}
+كود الطالب: ${id}`;
+  
+  navigator.clipboard.writeText(shareText).then(() => {
+    Swal.fire({
+      title: 'تم النسخ!',
+      text: 'تم نسخ بيانات الطالب إلى الحافظة',
+      icon: 'success',
+      timer: 2000
+    });
+  }).catch(err => {
+    showError('فشل في نسخ البيانات: ' + err);
+  });
 }
 
 function confirmDelete() {
