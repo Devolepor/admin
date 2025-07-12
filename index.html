@@ -491,7 +491,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="studentId"><i class="fas fa-id-card"></i> كود الطالب</label>
-            <input type="text" id="studentId" placeholder="أدخل كود الطالب">
+            <input type="text" id="studentId" placeholder="سيتم توليد الكود تلقائياً" disabled>
           </div>
           <div class="form-group">
             <label for="studentName"><i class="fas fa-user"></i> اسم الطالب</label>
@@ -640,6 +640,15 @@ document.getElementById("themeToggle").addEventListener("click", function() {
     this.innerHTML = '<i class="fas fa-moon"></i>';
   }
 });
+
+// دالة لتوليد كود طالب عشوائي مكون من 6 أرقام
+function generateStudentId() {
+  let id;
+  do {
+    id = Math.floor(100000 + Math.random() * 900000).toString();
+  } while (students[id]); // تأكد من أن الكود غير موجود مسبقاً
+  return id;
+}
 
 function checkLogin() {
   const pass = document.getElementById("loginPassword").value;
@@ -859,7 +868,12 @@ function filterByGrade() {
 function showAddModal() {
   currentStudentId = null;
   document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> إضافة طالب جديد';
-  document.getElementById('studentId').value = '';
+  
+  // توليد كود تلقائي وتعطيل الحقل
+  const studentIdField = document.getElementById('studentId');
+  studentIdField.value = generateStudentId();
+  studentIdField.disabled = true;
+  
   document.getElementById('studentName').value = '';
   document.getElementById('studentLevel').value = '';
   
@@ -872,9 +886,9 @@ function showAddModal() {
   document.getElementById('saveStudentBtn').onclick = saveStudent;
   document.getElementById('studentModal').style.display = 'block';
   
-  // Focus on first input
+  // Focus على حقل الاسم
   setTimeout(() => {
-    document.getElementById('studentId').focus();
+    document.getElementById('studentName').focus();
   }, 100);
 }
 
@@ -883,7 +897,12 @@ function showEditModal(id) {
   const student = students[id];
   
   document.getElementById('modalTitle').innerHTML = `<i class="fas fa-user-edit"></i> تعديل بيانات الطالب ${id}`;
-  document.getElementById('studentId').value = id;
+  
+  // تمكين حقل الكود في حالة التعديل
+  const studentIdField = document.getElementById('studentId');
+  studentIdField.value = id;
+  studentIdField.disabled = false;
+  
   document.getElementById('studentName').value = student.name;
   
   const gradeSelect = document.getElementById('studentGrade');
@@ -962,6 +981,21 @@ function saveStudent() {
       attendance: Object.fromEntries(weekDays.map(day => [day, "-"])),
       fees: Object.fromEntries(months.map(month => [month, false]))
     };
+    
+    // عرض رسالة بنجاح مع كود الطالب
+    Swal.fire({
+      title: 'تمت الإضافة بنجاح',
+      html: `
+        <div style="text-align: right;">
+          <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
+          <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
+          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
+          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
+        </div>
+      `,
+      icon: 'success',
+      confirmButtonText: 'حسناً'
+    });
   } else {
     // Update existing student
     if (currentStudentId !== id) {
@@ -980,11 +1014,11 @@ function saveStudent() {
       students[id].main = grade;
       students[id].info = level;
     }
+    showSuccess('تم تحديث بيانات الطالب بنجاح');
   }
   
   renderTable();
   closeModal();
-  showSuccess('تم حفظ بيانات الطالب بنجاح');
 }
 
 function confirmDelete() {
