@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -514,11 +515,29 @@
       line-height: 1.6;
     }
     
+    .post-image {
+      max-width: 150px;
+      max-height: 150px;
+      border-radius: 8px;
+      margin: 10px 0;
+      display: block;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    
+    .post-image:hover {
+      transform: scale(1.5);
+      z-index: 10;
+      position: relative;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    
     .post-actions {
       display: flex;
       gap: 15px;
       border-top: 1px solid var(--gray-light);
       padding-top: 15px;
+      flex-wrap: wrap;
     }
     
     .post-action {
@@ -528,14 +547,19 @@
       color: var(--text-light);
       cursor: pointer;
       transition: var(--transition);
+      padding: 8px 12px;
+      border-radius: 20px;
+      background-color: var(--light-bg);
     }
     
     .post-action:hover {
       color: var(--primary-color);
+      background-color: rgba(25, 118, 210, 0.1);
     }
     
     .post-action.liked {
       color: var(--danger-color);
+      background-color: rgba(229, 57, 53, 0.1);
     }
     
     .post-delete {
@@ -657,6 +681,89 @@
       margin-top: 10px;
     }
 
+    /* أنماط لتحميل الصور */
+    .image-upload {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .image-preview {
+      max-width: 150px;
+      max-height: 150px;
+      border-radius: 8px;
+      display: none;
+      cursor: pointer;
+    }
+    
+    .upload-btn {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+    
+    .upload-btn input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    /* نمط لعرض الصورة بالحجم الكامل */
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.9);
+      text-align: center;
+    }
+    
+    .image-modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      margin: auto;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .close-image {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 35px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* أنماط جديدة للمشاركة */
+    .share-image-container {
+      text-align: center;
+      margin: 15px 0;
+    }
+    
+    .share-image {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--gray-light);
+      box-shadow: var(--shadow);
+    }
+
+    /* أنماط جديدة للأزرار على الهواتف */
+    .mobile-actions {
+      display: none;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -710,11 +817,28 @@
       }
 
       .post-actions {
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 10px;
       }
       
       .add-student-form {
         grid-template-columns: 1fr;
+      }
+      
+      .post-image {
+        max-width: 100%;
+        max-height: 200px;
+      }
+
+      /* إظهار أزرار الهاتف */
+      .mobile-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .desktop-actions {
+        display: none;
       }
     }
     
@@ -745,6 +869,11 @@
       
       .form-actions button {
         width: 100%;
+      }
+      
+      .post-image {
+        max-width: 100%;
+        max-height: 150px;
       }
     }
     
@@ -784,6 +913,12 @@
   </style>
 </head>
 <body>
+  <!-- Modal لعرض الصورة بالحجم الكامل -->
+  <div id="imageModal" class="image-modal">
+    <span class="close-image" onclick="closeImageModal()">&times;</span>
+    <img class="image-modal-content" id="expandedImage">
+  </div>
+
   <div class="login-screen" id="loginScreen">
     <div class="login-box">
       <h2><i class="fas fa-lock"></i> تسجيل الدخول</h2>
@@ -877,6 +1012,16 @@
           <div class="form-group">
             <label for="editPostContent"><i class="fas fa-align-left"></i> محتوى المنشور</label>
             <textarea id="editPostContent" placeholder="اكتب محتوى المنشور هنا..." rows="6"></textarea>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-image"></i> صورة المنشور (اختياري)</label>
+            <div class="image-upload">
+              <button class="btn upload-btn">
+                <i class="fas fa-upload"></i> اختر صورة
+                <input type="file" id="postImageInput" accept="image/*" onchange="previewPostImage()">
+              </button>
+              <img id="postImagePreview" class="image-preview" alt="معاينة الصورة" onclick="expandImage(this)">
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1021,6 +1166,7 @@ let currentPostId = null;
 let deleteStudentId = null;
 let isLoading = false;
 let originalButtonText = "";
+let postImageFile = null;
 
 const grades = [
   "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
@@ -1279,6 +1425,12 @@ function renderPosts() {
   sortedPosts.forEach(([id, post]) => {
     const postElement = document.createElement('div');
     postElement.className = 'post';
+    
+    let imageHtml = '';
+    if (post.image) {
+      imageHtml = `<img src="${post.image}" class="post-image" alt="صورة المنشور" onclick="expandImage(this)">`;
+    }
+    
     postElement.innerHTML = `
       <div class="post-delete" onclick="deletePost('${id}')">
         <i class="fas fa-trash"></i>
@@ -1295,6 +1447,7 @@ function renderPosts() {
       <div class="post-content">
         <h3>${post.title}</h3>
         <p>${post.content.replace(/\n/g, '<br>')}</p>
+        ${imageHtml}
       </div>
       <div class="post-actions">
         <div class="post-action ${post.likedBy && post.likedBy.includes('admin') ? 'liked' : ''}" 
@@ -1310,6 +1463,17 @@ function renderPosts() {
           <i class="fas fa-edit"></i>
           <span>تعديل</span>
         </div>
+      </div>
+      <div class="mobile-actions">
+        <button class="btn" onclick="toggleLike('${id}')">
+          <i class="fas fa-heart"></i> إعجاب (${post.likes || 0})
+        </button>
+        <button class="btn" onclick="sharePost('${id}')">
+          <i class="fas fa-share"></i> مشاركة
+        </button>
+        <button class="btn" onclick="showPostModal('${id}')">
+          <i class="fas fa-edit"></i> تعديل
+        </button>
       </div>
     `;
     postsList.appendChild(postElement);
@@ -1503,6 +1667,21 @@ function closeModal() {
   document.getElementById('notesModal').style.display = 'none';
 }
 
+function closePostModal() {
+  document.getElementById('postModal').style.display = 'none';
+}
+
+function closeImageModal() {
+  document.getElementById('imageModal').style.display = 'none';
+}
+
+function expandImage(img) {
+  const modal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('expandedImage');
+  modal.style.display = 'block';
+  modalImg.src = img.src;
+}
+
 function addStudentFromForm() {
   const id = generateStudentId();
   const name = document.getElementById('newStudentName').value.trim();
@@ -1531,51 +1710,145 @@ function addStudentFromForm() {
     fees: Object.fromEntries(months.map(month => [month, false]))
   };
   
-  // عرض رسالة بنجاح مع كود الطالب
-  const shareText = `تم تسجيل طالب جديد:
+  // Capture the UI to share as image
+  captureStudentUI(id, name, grade, level);
+  
+  renderTable();
+  clearAddForm();
+}
+
+async function captureStudentUI(id, name, grade, level) {
+  try {
+    // Create a temporary element to capture
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'fixed';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.padding = '15px';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.borderRadius = '10px';
+    tempDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+    tempDiv.style.width = '300px';
+    tempDiv.style.fontFamily = "'Tajawal', sans-serif";
+    
+    tempDiv.innerHTML = `
+      <div style="text-align: center;">
+        <h2 style="color: #1976d2; margin-bottom: 15px; font-size: 20px;">بيانات الطالب</h2>
+        <div style="text-align: right; padding: 0 10px;">
+          <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-id-card"></i> الكود:</strong> ${id}</p>
+          <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-user"></i> الاسم:</strong> ${name}</p>
+          <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-graduation-cap"></i> الصف:</strong> ${grade}</p>
+          <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-star"></i> المستوى:</strong> ${level || '-'}</p>
+        </div>
+        <p style="margin-top: 15px; color: #666; font-size: 12px;">تاريخ الإضافة: ${new Date().toLocaleDateString('ar-EG')}</p>
+      </div>
+    `;
+    
+    document.body.appendChild(tempDiv);
+    
+    // Use html2canvas to capture the element
+    const canvas = await html2canvas(tempDiv, {
+      scale: 1,
+      logging: false,
+      useCORS: true,
+      width: 300,
+      height: tempDiv.offsetHeight
+    });
+    
+    document.body.removeChild(tempDiv);
+    
+    // Convert canvas to image URL
+    const imageUrl = canvas.toDataURL('image/png');
+    
+    // عرض رسالة بنجاح مع كود الطالب والصورة
+    const shareUrl = encodeURIComponent(window.location.href);
+    
+    Swal.fire({
+      title: 'تمت الإضافة بنجاح',
+      html: `
+        <div style="text-align: right;">
+          <div class="share-image-container">
+            <img src="${imageUrl}" class="share-image" alt="بيانات الطالب">
+          </div>
+          <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
+          <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
+          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
+          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
+          
+          <div class="share-buttons">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" 
+               target="_blank" class="share-btn facebook">
+              <i class="fab fa-facebook-f"></i> فيسبوك
+            </a>
+            <a href="https://wa.me/?text=${encodeURIComponent(`بيانات الطالب:\nالكود: ${id}\nالاسم: ${name}\nالصف: ${grade}\nالمستوى: ${level || '-'}`)}" 
+               target="_blank" class="share-btn whatsapp">
+              <i class="fab fa-whatsapp"></i> واتساب
+            </a>
+            <a href="https://t.me/share/url?url=${shareUrl}" 
+               target="_blank" class="share-btn telegram">
+              <i class="fab fa-telegram-plane"></i> تيليجرام
+            </a>
+            <a href="#" onclick="downloadStudentImage('${id}', '${imageUrl}')" class="share-btn" style="background-color: #4CAF50;">
+              <i class="fas fa-download"></i> تحميل الصورة
+            </a>
+          </div>
+        </div>
+      `,
+      icon: 'success',
+      confirmButtonText: 'حسناً',
+      width: '600px'
+    });
+    
+  } catch (error) {
+    console.error('Error capturing student UI:', error);
+    // Fallback to regular message if image capture fails
+    const shareText = `تم تسجيل طالب جديد:
 الاسم: ${name}
 الصف: ${grade}
 المستوى: ${level || '-'}
 كود الطالب: ${id}`;
-  
-  const shareUrl = encodeURIComponent(window.location.href);
-  const encodedText = encodeURIComponent(shareText);
-  
-  Swal.fire({
-    title: 'تمت الإضافة بنجاح',
-    html: `
-      <div style="text-align: right;">
-        <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
-        <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
-        <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
-        <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
-        
-        <div class="share-buttons">
-          <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
-             target="_blank" class="share-btn facebook">
-            <i class="fab fa-facebook-f"></i> فيسبوك
-          </a>
-          <a href="https://wa.me/?text=${encodedText}" 
-             target="_blank" class="share-btn whatsapp">
-            <i class="fab fa-whatsapp"></i> واتساب
-          </a>
-          <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
-             target="_blank" class="share-btn telegram">
-            <i class="fab fa-telegram-plane"></i> تيليجرام
-          </a>
-          <a href="#" onclick="copyStudentLink('${id}')" class="share-btn link">
-            <i class="fas fa-link"></i> نسخ الرابط
-          </a>
+    
+    const shareUrl = encodeURIComponent(window.location.href);
+    const encodedText = encodeURIComponent(shareText);
+    
+    Swal.fire({
+      title: 'تمت الإضافة بنجاح',
+      html: `
+        <div style="text-align: right;">
+          <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
+          <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
+          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
+          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
+          
+          <div class="share-buttons">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
+               target="_blank" class="share-btn facebook">
+              <i class="fab fa-facebook-f"></i> فيسبوك
+            </a>
+            <a href="https://wa.me/?text=${encodedText}" 
+               target="_blank" class="share-btn whatsapp">
+              <i class="fab fa-whatsapp"></i> واتساب
+            </a>
+            <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
+               target="_blank" class="share-btn telegram">
+              <i class="fab fa-telegram-plane"></i> تيليجرام
+            </a>
+          </div>
         </div>
-      </div>
-    `,
-    icon: 'success',
-    confirmButtonText: 'حسناً',
-    width: '700px'
-  });
-  
-  renderTable();
-  clearAddForm();
+      `,
+      icon: 'success',
+      confirmButtonText: 'حسناً',
+      width: '600px'
+    });
+  }
+}
+
+function downloadStudentImage(id, imageUrl) {
+  const link = document.createElement('a');
+  link.href = imageUrl;
+  link.download = `طالب_${id}.png`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 function clearAddForm() {
@@ -1700,6 +1973,7 @@ function switchTab(tabName) {
 
 function showPostModal(postId = null) {
   currentPostId = postId;
+  postImageFile = null;
   
   if (postId) {
     // وضع التعديل
@@ -1707,19 +1981,42 @@ function showPostModal(postId = null) {
     const post = posts[postId];
     document.getElementById('editPostTitle').value = post.title;
     document.getElementById('editPostContent').value = post.content;
+    
+    // عرض الصورة إذا كانت موجودة
+    const preview = document.getElementById('postImagePreview');
+    if (post.image) {
+      preview.src = post.image;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
   } else {
     // وضع الإضافة
     document.getElementById('postModalTitle').innerHTML = '<i class="fas fa-plus"></i> منشور جديد';
     document.getElementById('editPostTitle').value = '';
     document.getElementById('editPostContent').value = '';
+    document.getElementById('postImagePreview').style.display = 'none';
   }
   
   document.getElementById('savePostBtn').onclick = savePost;
   document.getElementById('postModal').style.display = 'block';
 }
 
-function closePostModal() {
-  document.getElementById('postModal').style.display = 'none';
+function previewPostImage() {
+  const fileInput = document.getElementById('postImageInput');
+  const preview = document.getElementById('postImagePreview');
+  
+  if (fileInput.files && fileInput.files[0]) {
+    postImageFile = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    }
+    
+    reader.readAsDataURL(fileInput.files[0]);
+  }
 }
 
 function savePost() {
@@ -1750,17 +2047,50 @@ function savePost() {
       author: 'المدير'
     };
     
-    showSuccess('تم نشر المنشور بنجاح');
+    // Handle image upload if exists
+    if (postImageFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        posts[postId].image = e.target.result;
+        savePostsToGitHub();
+        renderPosts();
+        closePostModal();
+        showSuccess('تم نشر المنشور بنجاح');
+      };
+      reader.readAsDataURL(postImageFile);
+    } else {
+      savePostsToGitHub();
+      renderPosts();
+      closePostModal();
+      showSuccess('تم نشر المنشور بنجاح');
+    }
   } else {
     // تعديل منشور موجود
     posts[postId].title = title;
     posts[postId].content = content;
-    showSuccess('تم تحديث المنشور بنجاح');
+    
+    // Handle image upload if exists
+    if (postImageFile) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        posts[postId].image = e.target.result;
+        savePostsToGitHub();
+        renderPosts();
+        closePostModal();
+        showSuccess('تم تحديث المنشور بنجاح');
+      };
+      reader.readAsDataURL(postImageFile);
+    } else {
+      // Only update image if it wasn't removed
+      if (!document.getElementById('postImagePreview').style.display === 'none' && posts[postId].image) {
+        delete posts[postId].image;
+      }
+      savePostsToGitHub();
+      renderPosts();
+      closePostModal();
+      showSuccess('تم تحديث المنشور بنجاح');
+    }
   }
-  
-  savePostsToGitHub();
-  renderPosts();
-  closePostModal();
 }
 
 function deletePost(postId) {
@@ -1807,7 +2137,7 @@ function toggleLike(postId) {
 
 function sharePost(postId) {
   const post = posts[postId];
-  const shareText = `${post.title}\n\n${post.content}\n\nتاريخ النشر: ${post.date}`;
+  let shareText = `${post.title}\n\n${post.content}\n\nتاريخ النشر: ${post.date}`;
   const shareUrl = encodeURIComponent(window.location.href);
   const encodedText = encodeURIComponent(shareText);
   
@@ -1816,33 +2146,57 @@ function sharePost(postId) {
   savePostsToGitHub();
   renderPosts();
   
+  // إنشاء محتوى المشاركة
+  let shareHtml = `
+    <div style="text-align: right;">
+      <p>اختر طريقة المشاركة:</p>
+      <div class="share-buttons">
+        <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
+           target="_blank" class="share-btn facebook">
+          <i class="fab fa-facebook-f"></i> فيسبوك
+        </a>
+        <a href="https://wa.me/?text=${encodedText}" 
+           target="_blank" class="share-btn whatsapp">
+          <i class="fab fa-whatsapp"></i> واتساب
+        </a>
+        <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
+           target="_blank" class="share-btn telegram">
+          <i class="fab fa-telegram-plane"></i> تيليجرام
+        </a>
+  `;
+  
+  // إضافة زر تحميل الصورة إذا كان المنشور يحتوي على صورة
+  if (post.image) {
+    shareHtml += `
+        <a href="#" onclick="downloadPostImage('${postId}')" class="share-btn" style="background-color: #4CAF50;">
+          <i class="fas fa-download"></i> تحميل الصورة
+        </a>
+    `;
+  }
+  
+  shareHtml += `
+      </div>
+    </div>
+  `;
+  
   Swal.fire({
     title: 'مشاركة المنشور',
-    html: `
-      <div style="text-align: right;">
-        <p>اختر طريقة المشاركة:</p>
-        <div class="share-buttons">
-          <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
-             target="_blank" class="share-btn facebook">
-            <i class="fab fa-facebook-f"></i> فيسبوك
-          </a>
-          <a href="https://wa.me/?text=${encodedText}" 
-             target="_blank" class="share-btn whatsapp">
-            <i class="fab fa-whatsapp"></i> واتساب
-          </a>
-          <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
-             target="_blank" class="share-btn telegram">
-            <i class="fab fa-telegram-plane"></i> تيليجرام
-          </a>
-          <a href="#" onclick="copyPostLink('${postId}')" class="share-btn link">
-            <i class="fas fa-link"></i> نسخ الرابط
-          </a>
-        </div>
-      </div>
-    `,
+    html: shareHtml,
     showConfirmButton: false,
     width: '600px'
   });
+}
+
+function downloadPostImage(postId) {
+  const post = posts[postId];
+  if (post.image) {
+    const link = document.createElement('a');
+    link.href = post.image;
+    link.download = `منشور_${postId}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
 
 function copyPostLink(postId) {
