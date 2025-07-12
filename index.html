@@ -579,6 +579,84 @@
       display: block;
     }
 
+    /* أنماط جديدة لقسم الملاحظات */
+    .notes-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .notes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .notes-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .notes-content {
+      min-height: 100px;
+      padding: 10px;
+      border: 1px solid var(--gray-light);
+      border-radius: var(--radius);
+      background-color: var(--white);
+      color: var(--text-color);
+    }
+    
+    .notes-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    /* أنماط جديدة لواجهة إضافة الطالب */
+    .add-student-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .add-student-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .add-student-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+    
+    .add-student-form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -634,6 +712,10 @@
       .post-actions {
         flex-wrap: wrap;
       }
+      
+      .add-student-form {
+        grid-template-columns: 1fr;
+      }
     }
     
     @media (max-width: 480px) {
@@ -655,6 +737,14 @@
 
       .tab {
         text-align: center;
+      }
+      
+      .form-actions {
+        flex-direction: column;
+      }
+      
+      .form-actions button {
+        width: 100%;
       }
     }
     
@@ -795,6 +885,24 @@
         </div>
       </div>
     </div>
+    
+    <!-- Modal for Edit Notes -->
+    <div id="notesModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 class="modal-title"><i class="fas fa-sticky-note"></i> تعديل الملاحظات</h3>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="notesContent"><i class="fas fa-edit"></i> ملاحظات الطالب</label>
+            <textarea id="notesContent" rows="6" placeholder="أدخل ملاحظات عن الطالب"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
+          <button class="btn btn-success" onclick="saveNotes()"><i class="fas fa-save"></i> حفظ</button>
+        </div>
+      </div>
+    </div>
 
     <div class="header">
       <h1><i class="fas fa-user-graduate"></i> لوحة تحكم الطلاب والمنشورات</h1>
@@ -820,11 +928,48 @@
 
     <!-- Students Tab -->
     <div id="students-tab" class="tab-content active">
+      <!-- قسم إضافة طالب جديد -->
+      <div class="add-student-section">
+        <div class="add-student-header">
+          <h2 class="add-student-title"><i class="fas fa-user-plus"></i> إضافة طالب جديد</h2>
+        </div>
+        <div class="add-student-form">
+          <div class="form-group">
+            <label for="newStudentId"><i class="fas fa-id-card"></i> كود الطالب</label>
+            <input type="text" id="newStudentId" placeholder="سيتم توليد الكود تلقائياً" disabled>
+          </div>
+          <div class="form-group">
+            <label for="newStudentName"><i class="fas fa-user"></i> اسم الطالب</label>
+            <input type="text" id="newStudentName" placeholder="أدخل اسم الطالب">
+          </div>
+          <div class="form-group">
+            <label for="newStudentGrade"><i class="fas fa-graduation-cap"></i> الصف</label>
+            <select id="newStudentGrade">
+              <option value="" disabled selected>اختر الصف</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newStudentLevel"><i class="fas fa-star"></i> المستوى</label>
+            <select id="newStudentLevel">
+              <option value="" disabled selected>اختر المستوى</option>
+              <option value="ضعيف">ضعيف</option>
+              <option value="مقبول">مقبول</option>
+              <option value="جيد">جيد</option>
+              <option value="جيد جدا">جيد جدا</option>
+              <option value="ممتاز">ممتاز</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button class="btn" onclick="clearAddForm()"><i class="fas fa-broom"></i> مسح النموذج</button>
+            <button class="btn btn-success" onclick="addStudentFromForm()"><i class="fas fa-plus"></i> إضافة طالب</button>
+          </div>
+        </div>
+      </div>
+      
       <div class="control-panel">
         <input type="text" id="token" placeholder="🔑 GitHub Token">
         <input type="text" id="searchId" placeholder="🔍 كود الطالب">
         <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
-        <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
         <button class="btn" onclick="openFile()"><i class="fas fa-folder-open"></i> فتح ملف</button>
         <button class="btn" onclick="saveToGitHub()"><i class="fas fa-save"></i> حفظ</button>
         <div class="export-dropdown">
@@ -928,6 +1073,9 @@ function checkLogin() {
     document.getElementById("loginScreen").style.display = "none";
     loadStudents();
     loadPosts();
+    
+    // تعبئة قائمة الصفوف عند تسجيل الدخول
+    fillGradeSelects();
   } else {
     Swal.fire({
       title: 'خطأ!',
@@ -936,6 +1084,24 @@ function checkLogin() {
       confirmButtonText: 'حسناً'
     });
   }
+}
+
+// تعبئة قوائم الصفوف في النماذج
+function fillGradeSelects() {
+  const gradeSelects = [
+    document.getElementById('studentGrade'),
+    document.getElementById('newStudentGrade'),
+    document.getElementById('gradeSelect')
+  ];
+  
+  gradeSelects.forEach(select => {
+    if (select) {
+      select.innerHTML = '<option value="" disabled selected>اختر الصف</option>';
+      grades.forEach(grade => {
+        select.innerHTML += `<option value="${grade}">${grade}</option>`;
+      });
+    }
+  });
 }
 
 async function loadStudents() {
@@ -1000,6 +1166,7 @@ function renderTable(filterGrade = null) {
             <th>المستوى</th>
             <th>الحضور</th>
             <th>المصروفات</th>
+            <th>الملاحظات</th>
             <th>تعديل</th>
             <th>حذف</th>
           </tr>
@@ -1043,6 +1210,20 @@ function renderTable(filterGrade = null) {
       `;
     }).join('');
     
+    // تحضير قسم الملاحظات
+    let notesHtml = `
+      <div class="notes-section">
+        <div class="notes-content">
+          ${s.notes || '<span style="color: var(--text-light);">لا توجد ملاحظات</span>'}
+        </div>
+        <div class="notes-actions">
+          <button class="btn" onclick="showNotesModal('${id}')">
+            <i class="fas fa-edit"></i> تعديل الملاحظات
+          </button>
+        </div>
+      </div>
+    `;
+    
     html += `
       <tr>
         <td>${count++}</td>
@@ -1052,6 +1233,7 @@ function renderTable(filterGrade = null) {
         <td>${s.info || '-'}</td>
         <td>${attendanceHtml}</td>
         <td>${feesHtml}</td>
+        <td>${notesHtml}</td>
         <td><button class="btn" onclick="showEditModal('${id}')"><i class="fas fa-edit"></i> تعديل</button></td>
         <td><button class="btn btn-danger" onclick="showDeleteModal('${id}')"><i class="fas fa-trash"></i> حذف</button></td>
       </tr>
@@ -1067,7 +1249,6 @@ function renderTable(filterGrade = null) {
   document.getElementById('studentsTable').innerHTML = studentCount > 0 ? html : `
     <div style="text-align: center; padding: 40px; background: var(--white); border-radius: 12px; box-shadow: var(--shadow);">
       <h3 style="color: var(--text-light);"><i class="fas fa-info-circle"></i> لا يوجد طلاب مسجلين حالياً</h3>
-      <button class="btn btn-success" onclick="showAddModal()" style="margin-top: 20px;"><i class="fas fa-user-plus"></i> إضافة طالب جديد</button>
     </div>
   `;
   
@@ -1170,6 +1351,14 @@ function searchStudent() {
       `<li>${month}: ${student.fees?.[month] ? '✅ مسددة' : '❌ غير مسددة'}</li>`
     ).join('');
     
+    let notesHtml = student.notes ? `
+      <hr>
+      <h4><i class="fas fa-sticky-note"></i> الملاحظات:</h4>
+      <div style="background: var(--light-bg); padding: 10px; border-radius: 8px;">
+        ${student.notes}
+      </div>
+    ` : '';
+    
     Swal.fire({
       title: '📄 بيانات الطالب',
       html: `
@@ -1183,6 +1372,7 @@ function searchStudent() {
           <ul>${attendanceList}</ul>
           <h4><i class="fas fa-money-bill-wave"></i> المصروفات:</h4>
           <ul>${feesList}</ul>
+          ${notesHtml}
         </div>
       `,
       confirmButtonText: 'حسناً',
@@ -1273,6 +1463,24 @@ function showEditModal(id) {
   document.getElementById('studentModal').style.display = 'block';
 }
 
+function showNotesModal(id) {
+  currentStudentId = id;
+  const student = students[id];
+  
+  document.getElementById('notesContent').value = student.notes || '';
+  document.getElementById('notesModal').style.display = 'block';
+}
+
+function saveNotes() {
+  const notes = document.getElementById('notesContent').value.trim();
+  if (currentStudentId) {
+    students[currentStudentId].notes = notes;
+    renderTable();
+    closeModal();
+    showSuccess('تم حفظ الملاحظات بنجاح');
+  }
+}
+
 function showDeleteModal(id) {
   deleteStudentId = id;
   const student = students[id];
@@ -1292,6 +1500,89 @@ function closeModal() {
   document.getElementById('studentModal').style.display = 'none';
   document.getElementById('gradeModal').style.display = 'none';
   document.getElementById('deleteModal').style.display = 'none';
+  document.getElementById('notesModal').style.display = 'none';
+}
+
+function addStudentFromForm() {
+  const id = generateStudentId();
+  const name = document.getElementById('newStudentName').value.trim();
+  const grade = document.getElementById('newStudentGrade').value;
+  const level = document.getElementById('newStudentLevel').value;
+  
+  if (!name) {
+    showError('يجب إدخال اسم الطالب');
+    document.getElementById('newStudentName').focus();
+    return;
+  }
+  
+  if (!grade) {
+    showError('يجب اختيار الصف');
+    document.getElementById('newStudentGrade').focus();
+    return;
+  }
+  
+  // Add new student
+  students[id] = {
+    name,
+    main: grade,
+    info: level,
+    notes: '',
+    attendance: Object.fromEntries(weekDays.map(day => [day, "-"])),
+    fees: Object.fromEntries(months.map(month => [month, false]))
+  };
+  
+  // عرض رسالة بنجاح مع كود الطالب
+  const shareText = `تم تسجيل طالب جديد:
+الاسم: ${name}
+الصف: ${grade}
+المستوى: ${level || '-'}
+كود الطالب: ${id}`;
+  
+  const shareUrl = encodeURIComponent(window.location.href);
+  const encodedText = encodeURIComponent(shareText);
+  
+  Swal.fire({
+    title: 'تمت الإضافة بنجاح',
+    html: `
+      <div style="text-align: right;">
+        <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
+        <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
+        <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
+        <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
+        
+        <div class="share-buttons">
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
+             target="_blank" class="share-btn facebook">
+            <i class="fab fa-facebook-f"></i> فيسبوك
+          </a>
+          <a href="https://wa.me/?text=${encodedText}" 
+             target="_blank" class="share-btn whatsapp">
+            <i class="fab fa-whatsapp"></i> واتساب
+          </a>
+          <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
+             target="_blank" class="share-btn telegram">
+            <i class="fab fa-telegram-plane"></i> تيليجرام
+          </a>
+          <a href="#" onclick="copyStudentLink('${id}')" class="share-btn link">
+            <i class="fas fa-link"></i> نسخ الرابط
+          </a>
+        </div>
+      </div>
+    `,
+    icon: 'success',
+    confirmButtonText: 'حسناً',
+    width: '700px'
+  });
+  
+  renderTable();
+  clearAddForm();
+}
+
+function clearAddForm() {
+  document.getElementById('newStudentName').value = '';
+  document.getElementById('newStudentGrade').value = '';
+  document.getElementById('newStudentLevel').value = '';
+  document.getElementById('newStudentId').value = generateStudentId();
 }
 
 function saveStudent() {
@@ -1330,52 +1621,12 @@ function saveStudent() {
       name,
       main: grade,
       info: level,
+      notes: '',
       attendance: Object.fromEntries(weekDays.map(day => [day, "-"])),
       fees: Object.fromEntries(months.map(month => [month, false]))
     };
     
-    // عرض رسالة بنجاح مع كود الطالب وخيارات المشاركة
-    const shareText = `تم تسجيل طالب جديد:
-الاسم: ${name}
-الصف: ${grade}
-المستوى: ${level || '-'}
-كود الطالب: ${id}`;
-    
-    const shareUrl = encodeURIComponent(window.location.href);
-    const encodedText = encodeURIComponent(shareText);
-    
-    Swal.fire({
-      title: 'تمت الإضافة بنجاح',
-      html: `
-        <div style="text-align: right;">
-          <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
-          <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
-          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
-          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
-          
-          <div class="share-buttons">
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
-               target="_blank" class="share-btn facebook">
-              <i class="fab fa-facebook-f"></i> فيسبوك
-            </a>
-            <a href="https://wa.me/?text=${encodedText}" 
-               target="_blank" class="share-btn whatsapp">
-              <i class="fab fa-whatsapp"></i> واتساب
-            </a>
-            <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
-               target="_blank" class="share-btn telegram">
-              <i class="fab fa-telegram-plane"></i> تيليجرام
-            </a>
-            <a href="#" onclick="copyStudentLink('${id}')" class="share-btn link">
-              <i class="fas fa-link"></i> نسخ الرابط
-            </a>
-          </div>
-        </div>
-      `,
-      icon: 'success',
-      confirmButtonText: 'حسناً',
-      width: '700px'
-    });
+    showSuccess('تم إضافة الطالب بنجاح');
   } else {
     // Update existing student
     if (currentStudentId !== id) {
@@ -1384,6 +1635,7 @@ function saveStudent() {
         name,
         main: grade,
         info: level,
+        notes: students[currentStudentId].notes || '',
         attendance: {...students[currentStudentId].attendance},
         fees: {...students[currentStudentId].fees}
       };
@@ -1407,7 +1659,8 @@ function copyStudentLink(id) {
 الاسم: ${student.name}
 الصف: ${student.main}
 المستوى: ${student.info || '-'}
-كود الطالب: ${id}`;
+كود الطالب: ${id}
+${student.notes ? `\nالملاحظات: ${student.notes}` : ''}`;
   
   navigator.clipboard.writeText(shareText).then(() => {
     Swal.fire({
@@ -1836,6 +2089,14 @@ function exportToPDF() {
     doc.text(`المستوى: ${student.info || '-'}`, 100, y);
     y += 8;
     
+    // Notes
+    if (student.notes) {
+      doc.text('الملاحظات:', 14, y);
+      y += 8;
+      doc.text(student.notes, 14, y, { maxWidth: 180 });
+      y += 10;
+    }
+    
     // Attendance
     doc.text('الحضور:', 14, y);
     y += 8;
@@ -1874,7 +2135,7 @@ function exportToExcel() {
   
   // Add headers
   data.push([
-    'كود الطالب', 'الاسم', 'الصف', 'المستوى', 
+    'كود الطالب', 'الاسم', 'الصف', 'المستوى', 'الملاحظات',
     ...weekDays.map(d => `حضور ${d}`),
     ...months.map(m => `مصروفات ${m}`)
   ]);
@@ -1887,6 +2148,7 @@ function exportToExcel() {
       student.name,
       student.main,
       student.info || '-',
+      student.notes || '-',
       ...weekDays.map(day => student.attendance?.[day] || '-'),
       ...months.map(month => student.fees?.[month] ? 'مسددة' : 'غير مسددة')
     ];
@@ -1918,19 +2180,12 @@ function exportToWord() {
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #1976d2; color: white; }
+        .notes { background-color: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; }
       </style>
     </head>
     <body>
       <h1>تقرير بيانات الطلاب</h1>
       <p style="text-align: center;">تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')}</p>
-      <table>
-        <tr>
-          <th>#</th>
-          <th>الكود</th>
-          <th>الاسم</th>
-          <th>الصف</th>
-          <th>المستوى</th>
-        </tr>
   `;
   
   // Add students data
@@ -1938,18 +2193,25 @@ function exportToWord() {
   Object.keys(students).forEach(id => {
     const student = students[id];
     html += `
-      <tr>
-        <td>${count++}</td>
-        <td>${id}</td>
-        <td>${student.name}</td>
-        <td>${student.main}</td>
-        <td>${student.info || '-'}</td>
-      </tr>
+      <div style="page-break-inside: avoid;">
+        <h3>الطالب ${count++}: ${student.name} (${id})</h3>
+        <table>
+          <tr>
+            <th>الصف</th>
+            <th>المستوى</th>
+          </tr>
+          <tr>
+            <td>${student.main}</td>
+            <td>${student.info || '-'}</td>
+          </tr>
+        </table>
+        ${student.notes ? `<div class="notes"><strong>الملاحظات:</strong> ${student.notes}</div>` : ''}
+        <hr>
+      </div>
     `;
   });
   
   html += `
-      </table>
     </body>
     </html>
   `;
@@ -1972,6 +2234,7 @@ window.onload = function() {
     document.getElementById('loginScreen').style.display = 'none';
     loadStudents();
     loadPosts();
+    fillGradeSelects();
   }
   
   // Focus on password field if not logged in
@@ -1981,6 +2244,9 @@ window.onload = function() {
   
   // Set up event listeners
   document.getElementById('savePostBtn').onclick = savePost;
+  
+  // Generate initial student ID for add form
+  document.getElementById('newStudentId').value = generateStudentId();
 };
 </script>
 </body>
