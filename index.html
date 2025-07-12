@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة تحكم الطلاب - النظام المتطور</title>
+  <title>لوحة تحكم الطلاب والمنشورات</title>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -100,7 +100,7 @@
       flex-wrap: wrap;
     }
     
-    input, button, select {
+    input, button, select, textarea {
       padding: 12px 15px;
       border-radius: var(--radius);
       border: 1px solid var(--gray-light);
@@ -112,7 +112,7 @@
       color: var(--text-color);
     }
     
-    input:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--primary-color);
       box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
@@ -436,6 +436,149 @@
       background-color: var(--primary-color);
     }
     
+    /* أنماط جديدة للمنشورات */
+    .posts-container {
+      margin-top: 40px;
+      border-top: 2px solid var(--gray-light);
+      padding-top: 30px;
+    }
+    
+    .posts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .post-form {
+      background: var(--white);
+      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 30px;
+    }
+    
+    .post-form textarea {
+      width: 100%;
+      padding: 15px;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-light);
+      font-family: 'Tajawal', sans-serif;
+      font-size: 16px;
+      margin-bottom: 15px;
+      resize: vertical;
+      min-height: 100px;
+      background-color: var(--white);
+      color: var(--text-color);
+    }
+    
+    .post {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .post-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .post-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-left: 15px;
+    }
+    
+    .post-author {
+      font-weight: bold;
+    }
+    
+    .post-date {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    
+    .post-content {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .post-actions {
+      display: flex;
+      gap: 15px;
+      border-top: 1px solid var(--gray-light);
+      padding-top: 15px;
+    }
+    
+    .post-action {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .post-action:hover {
+      color: var(--primary-color);
+    }
+    
+    .post-action.liked {
+      color: var(--danger-color);
+    }
+    
+    .post-delete {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      color: var(--danger-color);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: var(--transition);
+    }
+    
+    .post-delete:hover {
+      opacity: 1;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+    }
+    
+    .tab.active {
+      border-bottom-color: var(--primary-color);
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -482,6 +625,15 @@
       .share-btn {
         width: 100%;
       }
+
+      .posts-header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .post-actions {
+        flex-wrap: wrap;
+      }
     }
     
     @media (max-width: 480px) {
@@ -495,6 +647,14 @@
       
       .modal-footer button {
         width: 100%;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .tab {
+        text-align: center;
       }
     }
     
@@ -614,8 +774,30 @@
       </div>
     </div>
 
+    <!-- Modal for Add/Edit Post -->
+    <div id="postModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closePostModal()">&times;</span>
+        <h3 class="modal-title" id="postModalTitle"><i class="fas fa-plus"></i> منشور جديد</h3>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editPostTitle"><i class="fas fa-heading"></i> عنوان المنشور</label>
+            <input type="text" id="editPostTitle" placeholder="أدخل عنوان المنشور">
+          </div>
+          <div class="form-group">
+            <label for="editPostContent"><i class="fas fa-align-left"></i> محتوى المنشور</label>
+            <textarea id="editPostContent" placeholder="اكتب محتوى المنشور هنا..." rows="6"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closePostModal()"><i class="fas fa-times"></i> إلغاء</button>
+          <button class="btn btn-success" id="savePostBtn"><i class="fas fa-save"></i> حفظ</button>
+        </div>
+      </div>
+    </div>
+
     <div class="header">
-      <h1><i class="fas fa-user-graduate"></i> لوحة تحكم الطلاب</h1>
+      <h1><i class="fas fa-user-graduate"></i> لوحة تحكم الطلاب والمنشورات</h1>
       <div class="header-actions">
         <div class="grade-select">
           <button onclick="showGradeModal()"><i class="fas fa-filter"></i> اختر الصف</button>
@@ -627,26 +809,52 @@
       </div>
     </div>
 
-    <div class="control-panel">
-      <input type="text" id="token" placeholder="🔑 GitHub Token">
-      <input type="text" id="searchId" placeholder="🔍 كود الطالب">
-      <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
-      <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
-      <button class="btn" onclick="openFile()"><i class="fas fa-folder-open"></i> فتح ملف</button>
-      <button class="btn" onclick="saveToGitHub()"><i class="fas fa-save"></i> حفظ</button>
-      <div class="export-dropdown">
-        <button class="btn export-btn"><i class="fas fa-file-export"></i> تصدير البيانات</button>
-        <div class="export-content">
-          <a href="#" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> تصدير PDF</a>
-          <a href="#" onclick="exportData('excel')"><i class="fas fa-file-excel"></i> تصدير Excel</a>
-          <a href="#" onclick="exportData('word')"><i class="fas fa-file-word"></i> تصدير Word</a>
-          <a href="#" onclick="exportData('json')"><i class="fas fa-file-code"></i> تصدير JSON</a>
-        </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('students')">
+        <i class="fas fa-users"></i> الطلاب
+      </div>
+      <div class="tab" onclick="switchTab('posts')">
+        <i class="fas fa-newspaper"></i> المنشورات
       </div>
     </div>
 
-    <div id="studentsCount"></div>
-    <div id="studentsTable"></div>
+    <!-- Students Tab -->
+    <div id="students-tab" class="tab-content active">
+      <div class="control-panel">
+        <input type="text" id="token" placeholder="🔑 GitHub Token">
+        <input type="text" id="searchId" placeholder="🔍 كود الطالب">
+        <button class="btn" onclick="searchStudent()"><i class="fas fa-search"></i> بحث</button>
+        <button class="btn btn-success" onclick="showAddModal()"><i class="fas fa-user-plus"></i> إضافة طالب</button>
+        <button class="btn" onclick="openFile()"><i class="fas fa-folder-open"></i> فتح ملف</button>
+        <button class="btn" onclick="saveToGitHub()"><i class="fas fa-save"></i> حفظ</button>
+        <div class="export-dropdown">
+          <button class="btn export-btn"><i class="fas fa-file-export"></i> تصدير البيانات</button>
+          <div class="export-content">
+            <a href="#" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> تصدير PDF</a>
+            <a href="#" onclick="exportData('excel')"><i class="fas fa-file-excel"></i> تصدير Excel</a>
+            <a href="#" onclick="exportData('word')"><i class="fas fa-file-word"></i> تصدير Word</a>
+            <a href="#" onclick="exportData('json')"><i class="fas fa-file-code"></i> تصدير JSON</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="studentsCount"></div>
+      <div id="studentsTable"></div>
+    </div>
+
+    <!-- Posts Tab -->
+    <div id="posts-tab" class="tab-content">
+      <div class="posts-container">
+        <div class="posts-header">
+          <h2><i class="fas fa-newspaper"></i> المنشورات</h2>
+          <button class="btn btn-success" onclick="showPostModal()">
+            <i class="fas fa-plus"></i> منشور جديد
+          </button>
+        </div>
+
+        <div id="postsList"></div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -654,14 +862,17 @@
 const { jsPDF } = window.jspdf;
 
 let students = {};
+let posts = {};
 let sha = "";
 const owner = "Devolepor";
 const repo = "app";
 const path = "students.json";
+const postsPath = "posts.json";
 const branch = "main";
 const PASSWORD = "0101356859001223277310";
 let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
 let currentStudentId = null;
+let currentPostId = null;
 let deleteStudentId = null;
 let isLoading = false;
 let originalButtonText = "";
@@ -716,6 +927,7 @@ function checkLogin() {
     localStorage.setItem("isLoggedIn", "true");
     document.getElementById("loginScreen").style.display = "none";
     loadStudents();
+    loadPosts();
   } else {
     Swal.fire({
       title: 'خطأ!',
@@ -730,7 +942,7 @@ async function loadStudents() {
   try {
     showLoading(true);
     let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
-    if (!res.ok) throw new Error('فشل في تحميل البيانات');
+    if (!res.ok) throw new Error('فشل في تحميل بيانات الطلاب');
     
     let data = await res.json();
     sha = data.sha;
@@ -743,7 +955,31 @@ async function loadStudents() {
     renderTable();
     Swal.fire({
       title: 'تحذير',
-      text: 'لا يوجد بيانات حالية، سيتم إنشاء ملف جديد عند الحفظ',
+      text: 'لا يوجد بيانات حالية للطلاب، سيتم إنشاء ملف جديد عند الحفظ',
+      icon: 'warning'
+    });
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadPosts() {
+  try {
+    showLoading(true);
+    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${postsPath}`);
+    if (!res.ok) throw new Error('فشل في تحميل المنشورات');
+    
+    let data = await res.json();
+    let decodedContent = decodeURIComponent(escape(atob(data.content)));
+    posts = JSON.parse(decodedContent);
+    renderPosts();
+  } catch (error) {
+    console.error("Error loading posts:", error);
+    posts = {};
+    renderPosts();
+    Swal.fire({
+      title: 'تحذير',
+      text: 'لا يوجد منشورات حالية، سيتم إنشاء ملف جديد عند الحفظ',
       icon: 'warning'
     });
   } finally {
@@ -841,6 +1077,62 @@ function renderTable(filterGrade = null) {
       <span><i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString('ar-EG')}</span>
     </div>
   `;
+}
+
+function renderPosts() {
+  const postsList = document.getElementById('postsList');
+  postsList.innerHTML = '';
+  
+  if (Object.keys(posts).length === 0) {
+    postsList.innerHTML = `
+      <div style="text-align: center; padding: 40px; background: var(--white); border-radius: 12px; box-shadow: var(--shadow);">
+        <h3 style="color: var(--text-light);"><i class="fas fa-info-circle"></i> لا يوجد منشورات حالياً</h3>
+      </div>
+    `;
+    return;
+  }
+  
+  // ترتيب المنشورات من الأحدث إلى الأقدم
+  const sortedPosts = Object.entries(posts).sort((a, b) => new Date(b[1].date) - new Date(a[1].date));
+  
+  sortedPosts.forEach(([id, post]) => {
+    const postElement = document.createElement('div');
+    postElement.className = 'post';
+    postElement.innerHTML = `
+      <div class="post-delete" onclick="deletePost('${id}')">
+        <i class="fas fa-trash"></i>
+      </div>
+      <div class="post-header">
+        <div class="post-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div class="post-author">${post.author}</div>
+          <div class="post-date">${post.date}</div>
+        </div>
+      </div>
+      <div class="post-content">
+        <h3>${post.title}</h3>
+        <p>${post.content.replace(/\n/g, '<br>')}</p>
+      </div>
+      <div class="post-actions">
+        <div class="post-action ${post.likedBy && post.likedBy.includes('admin') ? 'liked' : ''}" 
+             onclick="toggleLike('${id}')">
+          <i class="fas fa-heart"></i>
+          <span>${post.likes || 0} إعجاب</span>
+        </div>
+        <div class="post-action" onclick="sharePost('${id}')">
+          <i class="fas fa-share"></i>
+          <span>${post.shares || 0} مشاركة</span>
+        </div>
+        <div class="post-action" onclick="showPostModal('${id}')">
+          <i class="fas fa-edit"></i>
+          <span>تعديل</span>
+        </div>
+      </div>
+    `;
+    postsList.appendChild(postElement);
+  });
 }
 
 function updateAttendance(id, day, value) {
@@ -1139,6 +1431,243 @@ function confirmDelete() {
   }
 }
 
+// وظائف المنشورات
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+  document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+function showPostModal(postId = null) {
+  currentPostId = postId;
+  
+  if (postId) {
+    // وضع التعديل
+    document.getElementById('postModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل المنشور';
+    const post = posts[postId];
+    document.getElementById('editPostTitle').value = post.title;
+    document.getElementById('editPostContent').value = post.content;
+  } else {
+    // وضع الإضافة
+    document.getElementById('postModalTitle').innerHTML = '<i class="fas fa-plus"></i> منشور جديد';
+    document.getElementById('editPostTitle').value = '';
+    document.getElementById('editPostContent').value = '';
+  }
+  
+  document.getElementById('savePostBtn').onclick = savePost;
+  document.getElementById('postModal').style.display = 'block';
+}
+
+function closePostModal() {
+  document.getElementById('postModal').style.display = 'none';
+}
+
+function savePost() {
+  const title = document.getElementById('editPostTitle').value.trim();
+  const content = document.getElementById('editPostContent').value.trim();
+  
+  if (!title) {
+    showError('الرجاء إدخال عنوان للمنشور');
+    return;
+  }
+  
+  if (!content) {
+    showError('الرجاء إدخال محتوى للمنشور');
+    return;
+  }
+  
+  const postId = currentPostId || Date.now().toString();
+  
+  if (!currentPostId) {
+    // منشور جديد
+    posts[postId] = {
+      title,
+      content,
+      likes: 0,
+      likedBy: [],
+      shares: 0,
+      date: new Date().toLocaleString('ar-EG'),
+      author: 'المدير'
+    };
+    
+    showSuccess('تم نشر المنشور بنجاح');
+  } else {
+    // تعديل منشور موجود
+    posts[postId].title = title;
+    posts[postId].content = content;
+    showSuccess('تم تحديث المنشور بنجاح');
+  }
+  
+  savePostsToGitHub();
+  renderPosts();
+  closePostModal();
+}
+
+function deletePost(postId) {
+  Swal.fire({
+    title: 'هل أنت متأكد؟',
+    text: 'سيتم حذف هذا المنشور ولا يمكن التراجع عن هذا الإجراء!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'نعم، احذف',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      delete posts[postId];
+      savePostsToGitHub();
+      renderPosts();
+      showSuccess('تم حذف المنشور بنجاح');
+    }
+  });
+}
+
+function toggleLike(postId) {
+  const post = posts[postId];
+  const user = 'admin'; // يمكن تغيير هذا إذا كان لديك نظام مستخدمين
+  
+  if (!post.likedBy) {
+    post.likedBy = [];
+  }
+  
+  if (post.likedBy.includes(user)) {
+    // إزالة الإعجاب
+    post.likes--;
+    post.likedBy = post.likedBy.filter(u => u !== user);
+  } else {
+    // إضافة إعجاب
+    post.likes = (post.likes || 0) + 1;
+    post.likedBy.push(user);
+  }
+  
+  savePostsToGitHub();
+  renderPosts();
+}
+
+function sharePost(postId) {
+  const post = posts[postId];
+  const shareText = `${post.title}\n\n${post.content}\n\nتاريخ النشر: ${post.date}`;
+  const shareUrl = encodeURIComponent(window.location.href);
+  const encodedText = encodeURIComponent(shareText);
+  
+  // زيادة عدد المشاركات
+  post.shares = (post.shares || 0) + 1;
+  savePostsToGitHub();
+  renderPosts();
+  
+  Swal.fire({
+    title: 'مشاركة المنشور',
+    html: `
+      <div style="text-align: right;">
+        <p>اختر طريقة المشاركة:</p>
+        <div class="share-buttons">
+          <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
+             target="_blank" class="share-btn facebook">
+            <i class="fab fa-facebook-f"></i> فيسبوك
+          </a>
+          <a href="https://wa.me/?text=${encodedText}" 
+             target="_blank" class="share-btn whatsapp">
+            <i class="fab fa-whatsapp"></i> واتساب
+          </a>
+          <a href="https://t.me/share/url?url=${shareUrl}&text=${encodedText}" 
+             target="_blank" class="share-btn telegram">
+            <i class="fab fa-telegram-plane"></i> تيليجرام
+          </a>
+          <a href="#" onclick="copyPostLink('${postId}')" class="share-btn link">
+            <i class="fas fa-link"></i> نسخ الرابط
+          </a>
+        </div>
+      </div>
+    `,
+    showConfirmButton: false,
+    width: '600px'
+  });
+}
+
+function copyPostLink(postId) {
+  const post = posts[postId];
+  const shareText = `${post.title}\n\n${post.content}\n\nتاريخ النشر: ${post.date}`;
+  
+  navigator.clipboard.writeText(shareText).then(() => {
+    Swal.fire({
+      title: 'تم النسخ!',
+      text: 'تم نسخ المنشور إلى الحافظة',
+      icon: 'success',
+      timer: 2000
+    });
+  }).catch(err => {
+    showError('فشل في نسخ المنشور: ' + err);
+  });
+}
+
+async function savePostsToGitHub() {
+  const token = document.getElementById('token').value.trim();
+  if (!token) {
+    showError('الرجاء إدخال توكن GitHub أولاً');
+    document.getElementById('token').focus();
+    return;
+  }
+
+  const content = JSON.stringify(posts, null, 2);
+  const utf8Content = unescape(encodeURIComponent(content));
+  const encoded = btoa(utf8Content);
+
+  try {
+    showLoading(true);
+    
+    // تحقق مما إذا كان الملف موجودًا بالفعل للحصول على SHA
+    let sha = '';
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${postsPath}`, {
+        headers: {
+          'Authorization': `token ${token}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        sha = data.sha;
+      }
+    } catch (error) {
+      console.log('الملف غير موجود، سيتم إنشاء ملف جديد');
+    }
+    
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${postsPath}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: "تحديث المنشورات من لوحة التحكم",
+        content: encoded,
+        sha: sha || undefined,
+        branch: branch
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      showSuccess('تم حفظ المنشورات بنجاح على GitHub');
+    } else {
+      const error = await res.json();
+      showError(`فشل في حفظ المنشورات! ${error.message}`);
+    }
+  } catch (error) {
+    showError(`خطأ في الاتصال: ${error.message}`);
+  } finally {
+    showLoading(false);
+  }
+}
+
 async function saveToGitHub() {
   const token = document.getElementById('token').value.trim();
   if (!token) {
@@ -1148,6 +1677,7 @@ async function saveToGitHub() {
   }
   localStorage.setItem("gh_token", token);
 
+  // حفظ بيانات الطلاب
   const content = JSON.stringify(students, null, 2);
   const utf8Content = unescape(encodeURIComponent(content));
   const encoded = btoa(utf8Content);
@@ -1441,12 +1971,16 @@ window.onload = function() {
   if (localStorage.getItem('isLoggedIn') === 'true') {
     document.getElementById('loginScreen').style.display = 'none';
     loadStudents();
+    loadPosts();
   }
   
   // Focus on password field if not logged in
   if (document.getElementById('loginScreen').style.display !== 'none') {
     document.getElementById('loginPassword').focus();
   }
+  
+  // Set up event listeners
+  document.getElementById('savePostBtn').onclick = savePost;
 };
 </script>
 </body>
