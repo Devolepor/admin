@@ -764,6 +764,153 @@
       display: none;
     }
 
+    /* أنماط جديدة لعرض الطلاب على الهواتف */
+    .student-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: var(--transition);
+    }
+    
+    .student-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+    
+    .student-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .student-id {
+      font-weight: bold;
+      color: var(--primary-color);
+      font-size: 16px;
+    }
+    
+    .student-name {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .student-grade {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    
+    .student-level {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 5px;
+    }
+    
+    .level-weak {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .level-acceptable {
+      background-color: #fff8e1;
+      color: #e65100;
+    }
+    
+    .level-good {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .level-very-good {
+      background-color: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    .level-excellent {
+      background-color: #f3e5f5;
+      color: #6a1b9a;
+    }
+    
+    .student-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .student-actions .btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+    }
+    
+    .student-details {
+      display: none;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--gray-light);
+    }
+    
+    .student-details.active {
+      display: block;
+    }
+    
+    .details-section {
+      margin-bottom: 15px;
+    }
+    
+    .details-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .attendance-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    
+    .attendance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+      background: var(--light-bg);
+      border-radius: 5px;
+    }
+    
+    .fees-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    
+    .fee-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+      background: var(--light-bg);
+      border-radius: 5px;
+    }
+    
+    .notes-content {
+      background: var(--light-bg);
+      padding: 10px;
+      border-radius: 5px;
+      min-height: 50px;
+    }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;
@@ -789,8 +936,11 @@
       }
       
       table {
+        display: none;
+      }
+      
+      #studentsTable {
         display: block;
-        overflow-x: auto;
       }
       
       .control-panel {
@@ -840,6 +990,29 @@
       .desktop-actions {
         display: none;
       }
+      
+      /* تحسينات لعرض الطلاب على الهواتف */
+      .student-card {
+        padding: 12px;
+      }
+      
+      .student-name {
+        font-size: 16px;
+      }
+      
+      .student-id {
+        font-size: 14px;
+      }
+      
+      .student-actions .btn {
+        font-size: 12px;
+        padding: 6px;
+      }
+      
+      .attendance-grid,
+      .fees-grid {
+        grid-template-columns: 1fr;
+      }
     }
     
     @media (max-width: 480px) {
@@ -874,6 +1047,15 @@
       .post-image {
         max-width: 100%;
         max-height: 150px;
+      }
+      
+      .student-actions {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .student-actions .btn {
+        width: 100%;
       }
     }
     
@@ -1130,6 +1312,7 @@
 
       <div id="studentsCount"></div>
       <div id="studentsTable"></div>
+      <div id="studentsCards"></div>
     </div>
 
     <!-- Posts Tab -->
@@ -1261,10 +1444,12 @@ async function loadStudents() {
     let decodedContent = decodeURIComponent(escape(atob(data.content)));
     students = JSON.parse(decodedContent);
     renderTable();
+    renderStudentCards();
   } catch (error) {
     console.error("Error loading students:", error);
     students = {};
     renderTable();
+    renderStudentCards();
     Swal.fire({
       title: 'تحذير',
       text: 'لا يوجد بيانات حالية للطلاب، سيتم إنشاء ملف جديد عند الحفظ',
@@ -1300,6 +1485,8 @@ async function loadPosts() {
 }
 
 function renderTable(filterGrade = null) {
+  if (window.innerWidth <= 768) return; // لا تعرض الجدول على الهواتف
+  
   let html = `
     <div style="overflow-x: auto;">
       <table>
@@ -1404,6 +1591,122 @@ function renderTable(filterGrade = null) {
       <span><i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString('ar-EG')}</span>
     </div>
   `;
+}
+
+function renderStudentCards(filterGrade = null) {
+  if (window.innerWidth > 768) {
+    document.getElementById('studentsCards').innerHTML = '';
+    return;
+  }
+  
+  let html = '';
+  let studentCount = 0;
+  
+  for (let id in students) {
+    let s = students[id];
+    if (filterGrade && s.main.trim() !== filterGrade.trim()) continue;
+
+    studentCount++;
+    
+    // تحديد فئة المستوى لتنسيق العرض
+    let levelClass = '';
+    if (s.info === "ضعيف") levelClass = "level-weak";
+    else if (s.info === "مقبول") levelClass = "level-acceptable";
+    else if (s.info === "جيد") levelClass = "level-good";
+    else if (s.info === "جيد جدا") levelClass = "level-very-good";
+    else if (s.info === "ممتاز") levelClass = "level-excellent";
+    
+    html += `
+      <div class="student-card" id="student-card-${id}">
+        <div class="student-header" onclick="toggleStudentDetails('${id}')">
+          <div>
+            <div class="student-name">${s.name}</div>
+            <div class="student-id">كود: ${id}</div>
+          </div>
+          <div>
+            <div class="student-grade">${s.main}</div>
+            ${s.info ? `<span class="student-level ${levelClass}">${s.info}</span>` : ''}
+          </div>
+        </div>
+        
+        <div class="student-details" id="details-${id}">
+          <div class="details-section">
+            <div class="details-title"><i class="fas fa-calendar-check"></i> الحضور</div>
+            <div class="attendance-grid">
+              ${weekDays.map(day => `
+                <div class="attendance-item">
+                  <span>${day}</span>
+                  <select onchange="updateAttendance('${id}','${day}',this.value)" 
+                          style="padding: 3px; border-radius: 5px; background: var(--white); color: var(--text-color);">
+                    <option value="حاضر" ${s.attendance?.[day] === "حاضر" ? 'selected' : ''}>حاضر</option>
+                    <option value="غائب" ${s.attendance?.[day] === "غائب" ? 'selected' : ''}>غائب</option>
+                    <option value="-" ${!s.attendance?.[day] || s.attendance?.[day] === "-" ? 'selected' : ''}>-</option>
+                  </select>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="details-section">
+            <div class="details-title"><i class="fas fa-money-bill-wave"></i> المصروفات</div>
+            <div class="fees-grid">
+              ${months.map(month => `
+                <div class="fee-item">
+                  <span>${month}</span>
+                  <input type="checkbox" onchange="updateFee('${id}','${month}',this.checked)" 
+                         ${s.fees?.[month] ? 'checked' : ''} style="transform: scale(1.2);">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="details-section">
+            <div class="details-title"><i class="fas fa-sticky-note"></i> الملاحظات</div>
+            <div class="notes-content">
+              ${s.notes || 'لا توجد ملاحظات'}
+            </div>
+          </div>
+          
+          <div class="student-actions">
+            <button class="btn" onclick="showEditModal('${id}')">
+              <i class="fas fa-edit"></i> تعديل
+            </button>
+            <button class="btn btn-danger" onclick="showDeleteModal('${id}')">
+              <i class="fas fa-trash"></i> حذف
+            </button>
+            <button class="btn btn-success" onclick="showNotesModal('${id}')">
+              <i class="fas fa-edit"></i> ملاحظات
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('studentsCards').innerHTML = studentCount > 0 ? html : `
+    <div style="text-align: center; padding: 40px; background: var(--white); border-radius: 12px; box-shadow: var(--shadow);">
+      <h3 style="color: var(--text-light);"><i class="fas fa-info-circle"></i> لا يوجد طلاب مسجلين حالياً</h3>
+    </div>
+  `;
+  
+  document.getElementById('studentsCount').innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span><i class="fas fa-users"></i> عدد الطلاب المعروضين: ${studentCount}</span>
+      <span><i class="fas fa-calendar-alt"></i> ${new Date().toLocaleDateString('ar-EG')}</span>
+    </div>
+  `;
+}
+
+function toggleStudentDetails(id) {
+  const details = document.getElementById(`details-${id}`);
+  details.classList.toggle('active');
+  
+  // إغلاق التفاصيل الأخرى إذا كانت مفتوحة
+  document.querySelectorAll('.student-details').forEach(detail => {
+    if (detail.id !== `details-${id}` && detail.classList.contains('active')) {
+      detail.classList.remove('active');
+    }
+  });
 }
 
 function renderPosts() {
@@ -1542,6 +1845,18 @@ function searchStudent() {
       confirmButtonText: 'حسناً',
       width: '600px'
     });
+    
+    // Highlight the student card if on mobile
+    if (window.innerWidth <= 768) {
+      const card = document.getElementById(`student-card-${id}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth' });
+        card.style.boxShadow = '0 0 0 3px var(--primary-color)';
+        setTimeout(() => {
+          card.style.boxShadow = 'var(--shadow)';
+        }, 2000);
+      }
+    }
   } else {
     Swal.fire({
       title: '⚠️ تنبيه',
@@ -1568,6 +1883,7 @@ function filterByGrade() {
   const gradeSelect = document.getElementById('gradeSelect');
   const selectedGrade = gradeSelect.value;
   renderTable(selectedGrade);
+  renderStudentCards(selectedGrade);
   closeModal();
 }
 
@@ -1640,6 +1956,7 @@ function saveNotes() {
   if (currentStudentId) {
     students[currentStudentId].notes = notes;
     renderTable();
+    renderStudentCards();
     closeModal();
     showSuccess('تم حفظ الملاحظات بنجاح');
   }
@@ -1714,6 +2031,7 @@ function addStudentFromForm() {
   captureStudentUI(id, name, grade, level);
   
   renderTable();
+  renderStudentCards();
   clearAddForm();
 }
 
@@ -1919,6 +2237,7 @@ function saveStudent() {
   }
   
   renderTable();
+  renderStudentCards();
   closeModal();
 }
 
@@ -1947,6 +2266,7 @@ function confirmDelete() {
   if (deleteStudentId) {
     delete students[deleteStudentId];
     renderTable();
+    renderStudentCards();
     closeModal();
     showSuccess('تم حذف الطالب بنجاح');
     deleteStudentId = null;
@@ -2597,6 +2917,15 @@ window.onload = function() {
   
   // Generate initial student ID for add form
   document.getElementById('newStudentId').value = generateStudentId();
+  
+  // Handle window resize for responsive display
+  window.addEventListener('resize', function() {
+    if (window.innerWidth <= 768) {
+      renderStudentCards();
+    } else {
+      renderTable();
+    }
+  });
 };
 </script>
 </body>
