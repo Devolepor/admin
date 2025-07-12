@@ -1724,7 +1724,7 @@ async function captureStudentUI(id, name, grade, level) {
     tempDiv.style.position = 'fixed';
     tempDiv.style.left = '-9999px';
     tempDiv.style.padding = '15px';
-    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.backgroundColor = 'linear-gradient(to right, #ff758c, #ff7eb3);';
     tempDiv.style.borderRadius = '10px';
     tempDiv.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
     tempDiv.style.width = '300px';
@@ -1737,7 +1737,6 @@ async function captureStudentUI(id, name, grade, level) {
           <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-id-card"></i> الكود:</strong> ${id}</p>
           <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-user"></i> الاسم:</strong> ${name}</p>
           <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-graduation-cap"></i> الصف:</strong> ${grade}</p>
-          <p style="margin: 8px 0; font-size: 14px;"><strong><i class="fas fa-star"></i> المستوى:</strong> ${level || '-'}</p>
         </div>
         <p style="margin-top: 15px; color: #666; font-size: 12px;">تاريخ الإضافة: ${new Date().toLocaleDateString('ar-EG')}</p>
       </div>
@@ -1772,14 +1771,13 @@ async function captureStudentUI(id, name, grade, level) {
           <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
           <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
           <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
-          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
           
           <div class="share-buttons">
             <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" 
                target="_blank" class="share-btn facebook">
               <i class="fab fa-facebook-f"></i> فيسبوك
             </a>
-            <a href="https://wa.me/?text=${encodeURIComponent(`بيانات الطالب:\nالكود: ${id}\nالاسم: ${name}\nالصف: ${grade}\nالمستوى: ${level || '-'}`)}" 
+            <a href="https://wa.me/?text=${encodeURIComponent(`بيانات الطالب:\nالكود: ${id}\nالاسم: ${name}\nالصف: ${grade}}`)}" 
                target="_blank" class="share-btn whatsapp">
               <i class="fab fa-whatsapp"></i> واتساب
             </a>
@@ -1804,7 +1802,6 @@ async function captureStudentUI(id, name, grade, level) {
     const shareText = `تم تسجيل طالب جديد:
 الاسم: ${name}
 الصف: ${grade}
-المستوى: ${level || '-'}
 كود الطالب: ${id}`;
     
     const shareUrl = encodeURIComponent(window.location.href);
@@ -1817,7 +1814,6 @@ async function captureStudentUI(id, name, grade, level) {
           <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
           <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
           <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
-          <p><b><i class="fas fa-star"></i> المستوى:</b> ${level || '-'}</p>
           
           <div class="share-buttons">
             <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}&quote=${encodedText}" 
