@@ -2123,29 +2123,31 @@ async function captureStudentUI(id, name, grade, level) {
     Swal.fire({
       title: 'تمت الإضافة بنجاح',
       html: `
-        <div style="text-align: right;">
-          <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
-          <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
-          <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
-          
-          <div class="share-buttons">
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" 
-               target="_blank" class="share-btn facebook">
-              <i class="fab fa-facebook-f"></i> فيسبوك
-            </a>
-            <a href="https://wa.me/?text=${encodeURIComponent(`بيانات الطالب:\nالكود: ${id}\nالاسم: ${name}\nالصف: ${grade}}`)}" 
-               target="_blank" class="share-btn whatsapp">
-              <i class="fab fa-whatsapp"></i> واتساب
-            </a>
-            <a href="https://t.me/share/url?url=${shareUrl}" 
-               target="_blank" class="share-btn telegram">
-              <i class="fab fa-telegram-plane"></i> تيليجرام
-            </a>
-            <a href="#" onclick="downloadStudentImage('${id}', '${imageUrl}')" class="share-btn" style="background-color: #4CAF50;">
-              <i class="fas fa-download"></i> تحميل الصورة
-            </a>
-          </div>
-        </div>
+       <div style="text-align: right;">
+  <p><b><i class="fas fa-id-card"></i> كود الطالب:</b> ${id}</p>
+  <p><b><i class="fas fa-user"></i> الاسم:</b> ${name}</p>
+  <p><b><i class="fas fa-graduation-cap"></i> الصف:</b> ${grade}</p>
+
+  <div class="share-buttons">
+    <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" 
+       target="_blank" class="share-btn facebook">
+      <i class="fab fa-facebook-f"></i> فيسبوك
+    </a>
+    <a href="https://wa.me/?text=${encodeURIComponent(`بيانات الطالب:\nالكود: ${id}\nالاسم: ${name}\nالصف: ${grade}`)}" 
+       target="_blank" class="share-btn whatsapp">
+      <i class="fab fa-whatsapp"></i> واتساب
+    </a>
+    <!-- ماسنجر بدل تيليجرام -->
+    <a href="fb-messenger://share/?link=${shareUrl}" 
+       target="_blank" class="share-btn messenger" style="background-color: #0084FF;">
+      <i class="fab fa-facebook-messenger"></i> ماسنجر
+    </a>
+    <a href="#" onclick="downloadStudentImage('${id}', '${imageUrl}')" class="share-btn" style="background-color: #4CAF50;">
+      <i class="fas fa-download"></i> تحميل الصورة
+    </a>
+  </div>
+</div>
+
       `,
       icon: 'success',
       confirmButtonText: 'حسناً',
