@@ -150,6 +150,11 @@
       z-index: 1001;
       box-shadow: var(--shadow);
       font-size: 20px;
+      transition: var(--transition);
+    }
+    
+    .sidebar-toggle:hover {
+      transform: scale(1.1);
     }
     
     .header {
@@ -296,6 +301,7 @@
       justify-content: center;
       align-items: center;
       z-index: 9999;
+      animation: fadeIn 0.5s ease;
     }
     
     .login-box {
@@ -306,6 +312,14 @@
       width: 90%;
       max-width: 400px;
       text-align: center;
+      transform: scale(0.9);
+      animation: popIn 0.4s ease forwards;
+    }
+    
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      80% { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
     }
     
     .login-box h2 {
@@ -492,6 +506,12 @@
       max-height: 80vh;
       border-radius: 8px;
       box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+      animation: zoomIn 0.3s ease;
+    }
+    
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
     
     .close-image {
@@ -510,6 +530,12 @@
       align-items: center;
       justify-content: center;
       border-radius: 50%;
+      transition: var(--transition);
+    }
+    
+    .close-image:hover {
+      transform: rotate(90deg);
+      background: rgba(0,0,0,0.8);
     }
     
     .tabs {
@@ -650,6 +676,12 @@
       padding: 20px;
       margin-bottom: 20px;
       position: relative;
+      transition: var(--transition);
+    }
+    
+    .post:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
     
     .post-header {
@@ -691,6 +723,11 @@
       margin: 10px 0;
       display: block;
       cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .post-image:hover {
+      transform: scale(1.02);
     }
     
     .post-actions {
@@ -735,6 +772,7 @@
     
     .post-delete:hover {
       opacity: 1;
+      transform: scale(1.2);
     }
     
     .student-detail-card {
@@ -876,6 +914,11 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       margin-bottom: 10px;
+      transition: var(--transition);
+    }
+    
+    .trash-item:hover {
+      transform: translateY(-2px);
     }
     
     .trash-info {
@@ -946,6 +989,12 @@
       box-shadow: var(--shadow);
       padding: 20px;
       text-align: center;
+      transition: var(--transition);
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
     
     .stat-card h3 {
@@ -996,6 +1045,22 @@
     
     .edit-student-btn:hover {
       opacity: 1;
+      transform: scale(1.2);
+    }
+    
+    .file-info {
+      background: var(--light-bg);
+      padding: 15px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .file-info span {
+      font-weight: bold;
+      color: var(--primary-color);
     }
     
     @media (min-width: 768px) {
@@ -1156,6 +1221,11 @@
 
     <!-- تبويب الطلاب -->
     <div id="students-tab" class="tab-content active">
+      <div class="file-info">
+        <div><i class="fas fa-file-alt"></i> ملف البيانات الحالي: <span id="currentDataFile">students.json</span></div>
+        <div><i class="fas fa-users"></i> عدد الطلاب: <span id="totalStudentsInFile">0</span></div>
+      </div>
+
       <div class="control-panel">
         <input type="text" id="token" placeholder="🔑 GitHub Token">
         <input type="text" id="searchId" placeholder="🔍 كود الطالب">
@@ -1170,7 +1240,7 @@
 
       <div id="studentsCount" style="background: var(--white); padding: 15px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span><i class="fas fa-users"></i> عدد الطلاب: <span id="studentsCountNumber">0</span></span>
+          <span><i class="fas fa-users"></i> عدد الطلاب المعروضين: <span id="studentsCountNumber">0</span></span>
           <span><i class="fas fa-calendar-alt"></i> تاريخ اليوم: <span id="currentDate"></span></span>
         </div>
       </div>
@@ -1592,7 +1662,7 @@ const postsPath = "posts.json";
 const trashPath = "trash.json";
 const branch = "main";
 const PASSWORD = "010135685900122327731001150929598";
-let githubFileUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}`;
+const MAX_FILE_SIZE = 50000; // الحد الأقصى لحجم الملف (حوالي 50KB قبل التشفير)
 let currentStudentId = null;
 let currentPostId = null;
 let deleteStudentId = null;
@@ -1600,6 +1670,8 @@ let isLoading = false;
 let originalButtonText = "";
 let postImageFile = null;
 let studentImageFile = null;
+let currentDataFile = "students.json"; // الملف الحالي المستخدم لتخزين البيانات
+let allStudentsData = {}; // لتخزين جميع بيانات الطلاب من جميع الملفات
 
 const grades = [
   "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
@@ -1646,7 +1718,7 @@ function generateStudentId() {
   let id;
   do {
     id = Math.floor(100000 + Math.random() * 900000).toString();
-  } while (students[id]); // تأكد من أن الكود غير موجود مسبقاً
+  } while (allStudentsData[id]); // تأكد من أن الكود غير موجود مسبقاً في أي ملف
   return id;
 }
 
@@ -1655,7 +1727,7 @@ function checkLogin() {
   if (pass === PASSWORD) {
     localStorage.setItem("isLoggedIn", "true");
     document.getElementById("loginScreen").style.display = "none";
-    loadStudents();
+    loadAllStudentsData();
     loadPosts();
     loadTrash();
     
@@ -1712,30 +1784,164 @@ function fillGradeSelects() {
   }
 }
 
-async function loadStudents() {
+// دالة لتحميل جميع بيانات الطلاب من جميع الملفات
+async function loadAllStudentsData() {
   try {
     showLoading(true);
-    let res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`);
-    if (!res.ok) throw new Error('فشل في تحميل بيانات الطلاب');
+    allStudentsData = {};
+    students = {};
     
-    let data = await res.json();
-    sha = data.sha;
-    let decodedContent = decodeURIComponent(escape(atob(data.content)));
-    students = JSON.parse(decodedContent);
+    // تحميل الملف الرئيسي أولاً
+    await loadStudentsFile("students.json");
+    
+    // البحث عن ملفات إضافية
+    let fileNumber = 1;
+    let moreFilesExist = true;
+    
+    while (moreFilesExist) {
+      try {
+        const fileName = `students_${fileNumber}.json`;
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`);
+        
+        if (res.ok) {
+          await loadStudentsFile(fileName);
+          fileNumber++;
+        } else {
+          moreFilesExist = false;
+        }
+      } catch (error) {
+        moreFilesExist = false;
+      }
+    }
+    
+    // تحديد الملف الحالي بناءً على حجم البيانات
+    determineCurrentFile();
     renderStudentCards();
-    document.getElementById('studentsCountNumber').textContent = Object.keys(students).length;
     updateStats();
   } catch (error) {
-    console.error("Error loading students:", error);
-    students = {};
-    renderStudentCards();
-    Swal.fire({
-      title: 'تحذير',
-      text: 'لا يوجد بيانات حالية للطلاب، سيتم إنشاء ملف جديد عند الحفظ',
-      icon: 'warning'
-    });
+    console.error("Error loading students data:", error);
+    showError("حدث خطأ أثناء تحميل بيانات الطلاب");
   } finally {
     showLoading(false);
+  }
+}
+
+// دالة مساعدة لتحميل ملف طلاب معين
+async function loadStudentsFile(fileName) {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`);
+    if (!res.ok) throw new Error('فشل في تحميل ملف الطلاب');
+    
+    const data = await res.json();
+    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+    const fileData = JSON.parse(decodedContent);
+    
+    // دمج البيانات مع البيانات الحالية
+    Object.assign(allStudentsData, fileData);
+    
+    // إذا كان هذا هو الملف الحالي، قم بتحديث المتغيرات
+    if (fileName === currentDataFile) {
+      students = fileData;
+      sha = data.sha;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error loading file ${fileName}:`, error);
+    return false;
+  }
+}
+
+// دالة لتحديد الملف الحالي المستخدم للتخزين
+function determineCurrentFile() {
+  // تحقق أولاً من الملف الرئيسي
+  const mainFileSize = calculateFileSize(allStudentsData);
+  if (mainFileSize < MAX_FILE_SIZE) {
+    currentDataFile = "students.json";
+    students = allStudentsData;
+    document.getElementById('currentDataFile').textContent = "students.json";
+    document.getElementById('totalStudentsInFile').textContent = Object.keys(students).length;
+    return;
+  }
+  
+  // إذا كان الملف الرئيسي كبير جداً، ابحث عن أحدث ملف إضافي
+  let fileNumber = 1;
+  let latestFile = null;
+  let latestFileSize = 0;
+  
+  while (true) {
+    const fileName = `students_${fileNumber}.json`;
+    const fileData = {};
+    
+    // جمع بيانات هذا الملف من allStudentsData
+    for (const [id, student] of Object.entries(allStudentsData)) {
+      if (student._file === fileName) {
+        fileData[id] = student;
+      }
+    }
+    
+    const size = calculateFileSize(fileData);
+    if (size > 0 && size < MAX_FILE_SIZE) {
+      latestFile = fileName;
+      latestFileSize = size;
+    } else if (size === 0) {
+      break; // لا يوجد المزيد من الملفات
+    }
+    
+    fileNumber++;
+  }
+  
+  if (latestFile) {
+    currentDataFile = latestFile;
+    students = {};
+    for (const [id, student] of Object.entries(allStudentsData)) {
+      if (student._file === latestFile) {
+        students[id] = student;
+      }
+    }
+    document.getElementById('currentDataFile').textContent = latestFile;
+    document.getElementById('totalStudentsInFile').textContent = Object.keys(students).length;
+  } else {
+    // إذا لم نجد ملفاً مناسباً، أنشئ ملفاً جديداً
+    createNewDataFile();
+  }
+}
+
+// دالة لحساب الحجم التقريبي للملف
+function calculateFileSize(data) {
+  try {
+    const jsonString = JSON.stringify(data);
+    return new Blob([jsonString]).size;
+  } catch (error) {
+    console.error("Error calculating file size:", error);
+    return 0;
+  }
+}
+
+// دالة لإنشاء ملف بيانات جديد
+function createNewDataFile() {
+  // حساب عدد الملفات الموجودة
+  let fileNumber = 1;
+  while (true) {
+    const fileName = `students_${fileNumber}.json`;
+    let fileExists = false;
+    
+    for (const student of Object.values(allStudentsData)) {
+      if (student._file === fileName) {
+        fileExists = true;
+        break;
+      }
+    }
+    
+    if (!fileExists) {
+      currentDataFile = fileName;
+      students = {};
+      document.getElementById('currentDataFile').textContent = fileName;
+      document.getElementById('totalStudentsInFile').textContent = 0;
+      break;
+    }
+    
+    fileNumber++;
   }
 }
 
@@ -1896,6 +2102,12 @@ function showStudentDetails(id) {
           <div class="student-info-item">
             <span class="student-info-label"><i class="fas fa-phone"></i> رقم ولي الأمر:</span>
             <span class="student-info-value">${student.phone}</span>
+          </div>
+          ` : ''}
+          ${student._file ? `
+          <div class="student-info-item">
+            <span class="student-info-label"><i class="fas fa-file-alt"></i> ملف التخزين:</span>
+            <span class="student-info-value">${student._file}</span>
           </div>
           ` : ''}
         </div>
@@ -2147,6 +2359,14 @@ function searchStudent() {
 
   if (students[id]) {
     showStudentDetails(id);
+  } else if (allStudentsData[id]) {
+    // إذا كان الطالب موجوداً في ملف آخر
+    Swal.fire({
+      title: 'تم العثور على الطالب',
+      text: `الطالب موجود في ملف ${allStudentsData[id]._file || 'students.json'}`,
+      icon: 'info',
+      confirmButtonText: 'حسناً'
+    });
   } else {
     Swal.fire({
       title: '⚠️ تنبيه',
@@ -2384,7 +2604,7 @@ function saveStudent() {
     return;
   }
   
-  if (currentStudentId === null && students[id]) {
+  if (currentStudentId === null && allStudentsData[id]) {
     showError('كود الطالب موجود مسبقاً');
     document.getElementById('studentId').focus();
     return;
@@ -2399,7 +2619,8 @@ function saveStudent() {
       phone: phone || undefined,
       notes: '',
       attendance: Object.fromEntries(weekDays.map(day => [day, "-"])),
-      fees: Object.fromEntries(months.map(month => [month, false]))
+      fees: Object.fromEntries(months.map(month => [month, false])),
+      _file: currentDataFile // تخزين اسم الملف الذي يحتوي على بيانات الطالب
     };
     
     // Add QR code to notes if phone exists
@@ -2407,13 +2628,18 @@ function saveStudent() {
       students[id].notes = `QR Code لرقم ولي الأمر: https://wa.me/${phone}?text=حاضر\n\n`;
     }
     
+    // تحديث البيانات الكاملة
+    allStudentsData[id] = {...students[id]};
+    
     // Handle image upload if exists
     if (studentImageFile) {
       const reader = new FileReader();
       reader.onload = function(e) {
         students[id].image = e.target.result;
+        allStudentsData[id].image = e.target.result;
         renderStudentCards();
         document.getElementById('studentsCountNumber').textContent = Object.keys(students).length;
+        document.getElementById('totalStudentsInFile').textContent = Object.keys(students).length;
         closeModal();
         showSuccess('تم إضافة الطالب بنجاح');
       };
@@ -2421,6 +2647,7 @@ function saveStudent() {
     } else {
       renderStudentCards();
       document.getElementById('studentsCountNumber').textContent = Object.keys(students).length;
+      document.getElementById('totalStudentsInFile').textContent = Object.keys(students).length;
       closeModal();
       showSuccess('تم إضافة الطالب بنجاح');
     }
@@ -2436,19 +2663,25 @@ function saveStudent() {
         notes: students[currentStudentId].notes || '',
         attendance: {...students[currentStudentId].attendance},
         fees: {...students[currentStudentId].fees},
-        image: students[currentStudentId].image || undefined
+        image: students[currentStudentId].image || undefined,
+        _file: currentDataFile
       };
+      
       delete students[currentStudentId];
+      delete allStudentsData[currentStudentId];
+      allStudentsData[id] = {...students[id]};
     } else {
       // Just update the existing student
       students[id].name = name;
       students[id].main = grade;
       students[id].info = level || undefined;
       students[id].phone = phone || undefined;
+      allStudentsData[id] = {...students[id]};
       
       // Update QR code in notes if phone exists
       if (phone && !students[id].notes.includes('QR Code')) {
         students[id].notes = `QR Code لرقم ولي الأمر: https://wa.me/${phone}?text=حاضر\n\n${students[id].notes}`;
+        allStudentsData[id].notes = students[id].notes;
       }
     }
     
@@ -2457,6 +2690,7 @@ function saveStudent() {
       const reader = new FileReader();
       reader.onload = function(e) {
         students[id].image = e.target.result;
+        allStudentsData[id].image = e.target.result;
         renderStudentCards();
         closeModal();
         showSuccess('تم تحديث بيانات الطالب بنجاح');
@@ -2466,6 +2700,7 @@ function saveStudent() {
       // Only update image if it wasn't removed
       if (document.getElementById('studentImagePreview').style.display === 'none' && students[id].image) {
         delete students[id].image;
+        delete allStudentsData[id].image;
       }
       renderStudentCards();
       closeModal();
@@ -2492,10 +2727,12 @@ function confirmDelete() {
     };
     
     delete students[deleteStudentId];
+    delete allStudentsData[deleteStudentId];
     saveToGitHub();
     saveTrashToGitHub();
     renderStudentCards();
     document.getElementById('studentsCountNumber').textContent = Object.keys(students).length;
+    document.getElementById('totalStudentsInFile').textContent = Object.keys(students).length;
     closeModal();
     showSuccess('تم حذف الطالب بنجاح');
     deleteStudentId = null;
@@ -2948,7 +3185,7 @@ async function saveToGitHub() {
   }
   localStorage.setItem("gh_token", token);
 
-  // حفظ بيانات الطلاب
+  // حفظ بيانات الطلاب في الملف الحالي
   const content = JSON.stringify(students, null, 2);
   const utf8Content = unescape(encodeURIComponent(content));
   const encoded = btoa(utf8Content);
@@ -2960,7 +3197,24 @@ async function saveToGitHub() {
     saveBtn.innerHTML = '<span class="spinner"></span> جاري الحفظ...';
     saveBtn.disabled = true;
     
-    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+    // تحقق مما إذا كان الملف موجودًا بالفعل للحصول على SHA
+    let fileSha = '';
+    try {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${currentDataFile}`, {
+        headers: {
+          'Authorization': `token ${token}`
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        fileSha = data.sha;
+      }
+    } catch (error) {
+      console.log('الملف غير موجود، سيتم إنشاء ملف جديد');
+    }
+    
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${currentDataFile}`, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${token}`,
@@ -2969,7 +3223,7 @@ async function saveToGitHub() {
       body: JSON.stringify({
         message: "تحديث بيانات الطلاب من لوحة التحكم",
         content: encoded,
-        sha: sha,
+        sha: fileSha || undefined,
         branch: branch
       })
     });
@@ -2978,7 +3232,20 @@ async function saveToGitHub() {
       const data = await res.json();
       sha = data.content.sha;
       showSuccess('تم حفظ البيانات بنجاح على GitHub');
-      loadStudents();
+      
+      // تحقق مما إذا كان حجم الملف يقترب من الحد الأقصى
+      const fileSize = calculateFileSize(students);
+      if (fileSize > MAX_FILE_SIZE * 0.9) { // إذا تجاوز 90% من الحد الأقصى
+        Swal.fire({
+          title: 'تنبيه',
+          text: 'ملف البيانات يقترب من السعة القصوى، سيتم إنشاء ملف جديد تلقائياً عند الإضافة القادمة',
+          icon: 'warning',
+          confirmButtonText: 'حسناً'
+        });
+        createNewDataFile();
+      }
+      
+      loadAllStudentsData();
     } else {
       const error = await res.json();
       showError(`فشل في الحفظ! ${error.message}`);
@@ -3067,14 +3334,14 @@ function showReports(reportType) {
 function updateStats() {
   const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
   
-  let totalStudents = Object.keys(students).length;
+  let totalStudents = Object.keys(allStudentsData).length;
   let todayPresent = 0;
   let todayAbsent = 0;
   let paidFees = 0;
   let unpaidFees = 0;
   
-  for (let id in students) {
-    const student = students[id];
+  for (let id in allStudentsData) {
+    const student = allStudentsData[id];
     
     // حساب الحضور والغياب لليوم
     if (student.attendance?.[today] === 'حاضر') {
@@ -3114,8 +3381,8 @@ function showFeesReport() {
   let html = '';
   let count = 0;
   
-  for (let id in students) {
-    const student = students[id];
+  for (let id in allStudentsData) {
+    const student = allStudentsData[id];
     
     // تطبيق الفلاتر
     if (gradeFilter && student.main !== gradeFilter) continue;
@@ -3168,10 +3435,10 @@ function showFeesReport() {
       <td colspan="3">الإجمالي</td>
       ${months.map(month => {
         let paidCount = 0;
-        for (let id in students) {
-          if (students[id].fees?.[month]) paidCount++;
+        for (let id in allStudentsData) {
+          if (allStudentsData[id].fees?.[month]) paidCount++;
         }
-        return `<td>${paidCount}/${Object.keys(students).length}</td>`;
+        return `<td>${paidCount}/${Object.keys(allStudentsData).length}</td>`;
       }).join('')}
     </tr>
   `;
@@ -3223,8 +3490,8 @@ function generateFeesReport() {
   
   const data = [];
   
-  for (let id in students) {
-    const student = students[id];
+  for (let id in allStudentsData) {
+    const student = allStudentsData[id];
     
     // تطبيق الفلاتر
     if (gradeFilter && student.main !== gradeFilter) continue;
@@ -3294,11 +3561,11 @@ function generateFeesReport() {
   
   months.forEach(month => {
     let paidCount = 0;
-    for (let id in students) {
-      if (students[id].fees?.[month]) paidCount++;
+    for (let id in allStudentsData) {
+      if (allStudentsData[id].fees?.[month]) paidCount++;
     }
     
-    doc.text(`${month}: ${paidCount} مسددة / ${Object.keys(students).length} إجمالي`, 14, y);
+    doc.text(`${month}: ${paidCount} مسددة / ${Object.keys(allStudentsData).length} إجمالي`, 14, y);
     y += 8;
   });
   
@@ -3314,8 +3581,8 @@ function showAttendanceReport() {
   let html = '';
   let count = 0;
   
-  for (let id in students) {
-    const student = students[id];
+  for (let id in allStudentsData) {
+    const student = allStudentsData[id];
     
     // تطبيق الفلاتر
     if (gradeFilter && student.main !== gradeFilter) continue;
@@ -3368,9 +3635,9 @@ function showAttendanceReport() {
       ${weekDays.map(day => {
         let presentCount = 0;
         let absentCount = 0;
-        for (let id in students) {
-          if (students[id].attendance?.[day] === 'حاضر') presentCount++;
-          else if (students[id].attendance?.[day] === 'غائب') absentCount++;
+        for (let id in allStudentsData) {
+          if (allStudentsData[id].attendance?.[day] === 'حاضر') presentCount++;
+          else if (allStudentsData[id].attendance?.[day] === 'غائب') absentCount++;
         }
         return `<td>ح: ${presentCount}<br>غ: ${absentCount}</td>`;
       }).join('')}
@@ -3424,8 +3691,8 @@ function generateAttendanceReport() {
   
   const data = [];
   
-  for (let id in students) {
-    const student = students[id];
+  for (let id in allStudentsData) {
+    const student = allStudentsData[id];
     
     // تطبيق الفلاتر
     if (gradeFilter && student.main !== gradeFilter) continue;
@@ -3494,12 +3761,12 @@ function generateAttendanceReport() {
   weekDays.forEach(day => {
     let presentCount = 0;
     let absentCount = 0;
-    for (let id in students) {
-      if (students[id].attendance?.[day] === 'حاضر') presentCount++;
-      else if (students[id].attendance?.[day] === 'غائب') absentCount++;
+    for (let id in allStudentsData) {
+      if (allStudentsData[id].attendance?.[day] === 'حاضر') presentCount++;
+      else if (allStudentsData[id].attendance?.[day] === 'غائب') absentCount++;
     }
     
-    doc.text(`${day}: ${presentCount} حاضر / ${absentCount} غائب / ${Object.keys(students).length - presentCount - absentCount} غير محدد`, 14, y);
+    doc.text(`${day}: ${presentCount} حاضر / ${absentCount} غائب / ${Object.keys(allStudentsData).length - presentCount - absentCount} غير محدد`, 14, y);
     y += 8;
   });
   
@@ -3509,7 +3776,7 @@ function generateAttendanceReport() {
 
 // Export data functions
 function exportData(format) {
-  if (Object.keys(students).length === 0) {
+  if (Object.keys(allStudentsData).length === 0) {
     showError('لا يوجد بيانات لتصديرها');
     return;
   }
@@ -3549,8 +3816,8 @@ function exportToPDF() {
   let y = 35;
   
   // Add each student's data
-  Object.keys(students).forEach((id, index) => {
-    const student = students[id];
+  Object.keys(allStudentsData).forEach((id, index) => {
+    const student = allStudentsData[id];
     
     // Start new page if needed
     if (y > 250) {
@@ -3572,6 +3839,11 @@ function exportToPDF() {
     
     if (student.phone) {
       doc.text(`رقم ولي الأمر: ${student.phone}`, 14, y);
+      y += 8;
+    }
+    
+    if (student._file) {
+      doc.text(`ملف التخزين: ${student._file}`, 14, y);
       y += 8;
     }
     
@@ -3621,20 +3893,21 @@ function exportToExcel() {
   
   // Add headers
   data.push([
-    'كود الطالب', 'الاسم', 'الصف', 'المستوى', 'رقم ولي الأمر', 'الملاحظات',
+    'كود الطالب', 'الاسم', 'الصف', 'المستوى', 'رقم ولي الأمر', 'ملف التخزين', 'الملاحظات',
     ...weekDays.map(d => `حضور ${d}`),
     ...months.map(m => `مصروفات ${m}`)
   ]);
   
   // Add students data
-  Object.keys(students).forEach(id => {
-    const student = students[id];
+  Object.keys(allStudentsData).forEach(id => {
+    const student = allStudentsData[id];
     const row = [
       id,
       student.name,
       student.main,
       student.info || '-',
       student.phone || '-',
+      student._file || 'students.json',
       student.notes || '-',
       ...weekDays.map(day => student.attendance?.[day] || '-'),
       ...months.map(month => student.fees?.[month] ? 'مسددة' : 'غير مسددة')
@@ -3677,8 +3950,8 @@ function exportToWord() {
   
   // Add students data
   let count = 1;
-  Object.keys(students).forEach(id => {
-    const student = students[id];
+  Object.keys(allStudentsData).forEach(id => {
+    const student = allStudentsData[id];
     html += `
       <div style="page-break-inside: avoid;">
         <h3>الطالب ${count++}: ${student.name} (${id})</h3>
@@ -3687,11 +3960,13 @@ function exportToWord() {
             <th>الصف</th>
             <th>المستوى</th>
             ${student.phone ? '<th>رقم ولي الأمر</th>' : ''}
+            ${student._file ? '<th>ملف التخزين</th>' : ''}
           </tr>
           <tr>
             <td>${student.main}</td>
             <td>${student.info || '-'}</td>
             ${student.phone ? `<td>${student.phone}</td>` : ''}
+            ${student._file ? `<td>${student._file}</td>` : ''}
           </tr>
         </table>
         ${student.notes ? `<div class="notes"><strong>الملاحظات:</strong> ${student.notes}</div>` : ''}
@@ -3699,7 +3974,7 @@ function exportToWord() {
       </div>
     `;
   });
-  
+
   html += `
     </body>
     </html>
@@ -3711,7 +3986,7 @@ function exportToWord() {
 }
 
 function exportToJSON() {
-  const dataStr = JSON.stringify(students, null, 2);
+  const dataStr = JSON.stringify(allStudentsData, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   saveAs(blob, 'بيانات_الطلاب.json');
 }
@@ -3721,7 +3996,7 @@ window.onload = function() {
   // Check if already logged in
   if (localStorage.getItem('isLoggedIn') === 'true') {
     document.getElementById('loginScreen').style.display = 'none';
-    loadStudents();
+    loadAllStudentsData();
     loadPosts();
     loadTrash();
     fillGradeSelects();
