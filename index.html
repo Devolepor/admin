@@ -2333,128 +2333,118 @@
       doc.save('تقرير_الحضور_والغياب.pdf');
     }
 
-    async function saveToGitHub() {
-      const token = document.getElementById('token').value || localStorage.getItem('gh_token');
-      if (!token) {
-        showError('يرجى إدخال GitHub Token');
-        return;
-      }
+   async function saveToGitHub() {
+  const token = document.getElementById('token').value || localStorage.getItem('gh_token');
+  if (!token) {
+    showError('يرجى إدخال GitHub Token أولاً');
+    return;
+  }
 
-      createNewDataFile();
+  try {
+    showLoading(true);
+    const filePath = isPrimaryFileActive ? path : secondaryPath;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(
+      Object.fromEntries(Object.entries(allStudentsData).filter(([_, student]) => student._file === filePath))
+    ))));
 
-      const primaryData = Object.fromEntries(
-        Object.entries(allStudentsData).filter(([_, student]) => student._file === 'students.json')
-      );
-      const secondaryData = Object.fromEntries(
-        Object.entries(allStudentsData).filter(([_, student]) => student._file === 'students2.json')
-      );
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'تحديث بيانات الطلاب',
+        content: content,
+        sha: sha
+      })
+    });
 
-      try {
-        showLoading(true);
-        const files = [
-          { path, data: primaryData },
-          { path: secondaryPath, data: secondaryData }
-        ];
+    const data = await res.json();
 
-        for (let file of files) {
-          const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `token ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              message: `تحديث ${file.path}`,
-              content: btoa(JSON.stringify(file.data)),
-              branch,
-              sha: await getFileSha(file.path, token)
-            })
-          });
+    if (res.ok) {
+      sha = data.content.sha;
+      showSuccess('تم حفظ البيانات بنجاح على GitHub');
+    } else {
+      throw new Error(data.message || 'حدث خطأ أثناء الحفظ');
+    }
+  } catch (error) {
+    showError('فشل الحفظ: ' + error.message);
+  } finally {
+    showLoading(false);
+  }
+}
 
-          if (!res.ok) {
-            throw new Error(`فشل في حفظ ${file.path}`);
-          }
-        }
 
-        localStorage.setItem('gh_token', token);
-        document.getElementById('currentDataFile').textContent = currentDataFile;
-        showSuccess('تم حفظ البيانات بنجاح');
-      } catch (error) {
-        showError('فشل في حفظ البيانات: ' + error.message);
-      } finally {
-        showLoading(false);
-      }
+   async function savePostsToGitHub() {
+  const token = document.getElementById('token').value || localStorage.getItem('gh_token');
+  if (!token) {
+    showError('يرجى إدخال GitHub Token');
+    return;
+  }
+
+  try {
+    showLoading(true);
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${postsPath}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'تحديث المنشورات',
+        content: safeBase64Encode(posts),
+        branch,
+        sha: await getFileSha(postsPath, token)
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error('فشل في حفظ المنشورات');
     }
 
-    async function savePostsToGitHub() {
-      const token = document.getElementById('token').value || localStorage.getItem('gh_token');
-      if (!token) {
-        showError('يرجى إدخال GitHub Token');
-        return;
-      }
-
-      try {
-        showLoading(true);
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${postsPath}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: 'تحديث المنشورات',
-            content: btoa(JSON.stringify(posts)),
-            branch,
-            sha: await getFileSha(postsPath, token)
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error('فشل في حفظ المنشورات');
-        }
-
-        showSuccess('تم حفظ المنشورات بنجاح');
-      } catch (error) {
-        showError('فشل في حفظ المنشورات: ' + error.message);
-      } finally {
-        showLoading(false);
-      }
-    }
+    showSuccess('تم حفظ المنشورات بنجاح');
+  } catch (error) {
+    showError('فشل في حفظ المنشورات: ' + error.message);
+  } finally {
+    showLoading(false);
+  }
+}
 
     async function saveTrashToGitHub() {
-      const token = document.getElementById('token').value || localStorage.getItem('gh_token');
-      if (!token) {
-        showError('يرجى إدخال GitHub Token');
-        return;
-      }
+  const token = document.getElementById('token').value || localStorage.getItem('gh_token');
+  if (!token) {
+    showError('يرجى إدخال GitHub Token');
+    return;
+  }
 
-      try {
-        showLoading(true);
-        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${trashPath}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: 'تحديث سلة المهملات',
-            content: btoa(JSON.stringify(trash)),
-            branch,
-            sha: await getFileSha(trashPath, token)
-          })
-        });
+  try {
+    showLoading(true);
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${trashPath}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'تحديث سلة المهملات',
+        content: safeBase64Encode(trash),
+        branch,
+        sha: await getFileSha(trashPath, token)
+      })
+    });
 
-        if (!res.ok) {
-          throw new Error('فشل في حفظ سلة المهملات');
-        }
-
-        showSuccess('تم حفظ سلة المهملات بنجاح');
-      } catch (error) {
-        showError('فشل في حفظ سلة المهملات: ' + error.message);
-      } finally {
-        showLoading(false);
-      }
+    if (!res.ok) {
+      throw new Error('فشل في حفظ سلة المهملات');
     }
+
+    showSuccess('تم حفظ سلة المهملات بنجاح');
+  } catch (error) {
+    showError('فشل في حفظ سلة المهملات: ' + error.message);
+  } finally {
+    showLoading(false);
+  }
+}
 
     async function getFileSha(filePath, token) {
       try {
@@ -2577,4 +2567,4 @@
     });
   </script>
 </body>
-<html>
+</html>
