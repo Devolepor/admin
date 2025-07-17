@@ -1278,13 +1278,13 @@
     let currentDataFile = 'students.json';
     let secondaryDataFile = 'students2.json';
     let isPrimaryFileActive = true;
-    const owner = 'your-username';
-    const repo = 'your-repo';
+    const owner = 'Devolepor';
+    const repo = 'app';
     const branch = 'main';
-    const path = 'data/students.json';
-    const postsPath = 'data/posts.json';
-    const trashPath = 'data/trash.json';
-    const secondaryPath = 'data/students2.json';
+    const path = 'students.json';
+    const postsPath = 'posts.json';
+    const trashPath = 'trash.json';
+    const secondaryPath = 'students2.json';
     const MAX_FILE_SIZE = 1000000; // 1MB
     let sha = '';
     let originalButtonText = '';
@@ -1294,7 +1294,7 @@
 
     function checkLogin() {
       const password = document.getElementById('loginPassword').value;
-      if (password === 'admin123') {
+      if (password === '010135685900122327731001150929598') {
         localStorage.setItem('isLoggedIn', 'true');
         document.getElementById('loginScreen').style.display = 'none';
         loadAllStudentsData();
