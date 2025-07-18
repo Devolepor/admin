@@ -2485,6 +2485,12 @@ function showStudentDetails(id) {
             <span class="student-info-value">${student.phone}</span>
           </div>
           ` : ''}
+          ${student.group ? `
+          <div class="student-info-item">
+            <span class="student-info-label"><i class="fas fa-users"></i> المجموعة:</span>
+            <span class="student-info-value">${student.group}</span>
+          </div>
+          ` : ''}
           ${student._file ? `
           <div class="student-info-item">
             <span class="student-info-label"><i class="fas fa-file-alt"></i> ملف التخزين:</span>
@@ -2506,6 +2512,9 @@ function showStudentDetails(id) {
         </button>
         <button class="btn" onclick="showNotesModal('${id}')">
           <i class="fas fa-sticky-note"></i> الملاحظات
+        </button>
+        <button class="btn" onclick="scanQRCode('${id}')">
+          <i class="fas fa-qrcode"></i> مسح QR Code
         </button>
         ${student.phone ? `
         <button class="btn btn-success" onclick="generateQRCode('${id}', '${student.phone}')">
@@ -2535,7 +2544,12 @@ function showStudentDetails(id) {
   // Initialize QR code if phone exists
   if (student.phone) {
     new QRCode(document.getElementById(`qr-code-${id}`), {
-      text: `https://wa.me/${student.phone}?text=حاضر`,
+      text: JSON.stringify({
+        id: id,
+        phone: student.phone,
+        action: 'attendance',
+        group: student.group || 'default'
+      }),
       width: 150,
       height: 150,
       colorDark: "#000000",
@@ -2547,7 +2561,12 @@ function showStudentDetails(id) {
     const cardQrCodeDiv = document.getElementById(`qr-code-card-${id}`);
     if (cardQrCodeDiv) {
       new QRCode(cardQrCodeDiv, {
-        text: `https://wa.me/${student.phone}?text=حاضر`,
+        text: JSON.stringify({
+          id: id,
+          phone: student.phone,
+          action: 'attendance',
+          group: student.group || 'default'
+        }),
         width: 100,
         height: 100,
         colorDark: "#000000",
@@ -2594,6 +2613,12 @@ function generateStudentIdCard(id, student) {
             <span>${student.phone}</span>
           </div>
           ` : ''}
+          ${student.group ? `
+          <div class="student-id-card-info-item">
+            <span class="student-id-card-info-label">المجموعة:</span>
+            <span>${student.group}</span>
+          </div>
+          ` : ''}
         </div>
         ${student.phone ? `
         <div class="qr-code-container">
@@ -2619,6 +2644,147 @@ function generateStudentIdCard(id, student) {
   `;
 }
 
+// دالة مسح QR Code
+function scanQRCode(studentId = null) {
+  // هذه دالة محاكاة للماسح الضوئي الفعلي
+  // في التطبيق الحقيقي، ستستخدم مكتبة مثل Instascan أو ZXing
+  Swal.fire({
+    title: 'مسح QR Code',
+    html: `
+      <div style="text-align:center;">
+        <p>يتم الآن تشغيل الكاميرا لمسح QR Code</p>
+        <div id="scanner-placeholder" style="width:300px; height:300px; background:#eee; margin:10px auto; display:flex; align-items:center; justify-content:center;">
+          <i class="fas fa-camera" style="font-size:50px; color:#999;"></i>
+        </div>
+        <p>أو أدخل كود الطالب يدوياً:</p>
+        <input type="text" id="manualStudentId" class="swal2-input" placeholder="كود الطالب" value="${studentId || ''}">
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'تم المسح',
+    cancelButtonText: 'إلغاء',
+    preConfirm: () => {
+      const manualId = document.getElementById('manualStudentId').value.trim();
+      if (manualId) {
+        processQRCodeScan(manualId);
+      }
+    },
+    onOpen: () => {
+      // محاكاة مسح QR Code بعد 3 ثواني
+      setTimeout(() => {
+        // في التطبيق الحقيقي، سيتم استدعاء processQRCodeScan عند مسح الكود فعلياً
+        // هنا نعرض زر محاكاة للمسح
+        const scannerDiv = document.getElementById('scanner-placeholder');
+        scannerDiv.innerHTML = `
+          <button class="btn btn-success" onclick="mockQRScan()" style="padding:10px 20px;">
+            <i class="fas fa-camera"></i> محاكاة مسح QR Code
+          </button>
+        `;
+      }, 1000);
+    }
+  });
+}
+
+// دالة محاكاة مسح QR Code
+function mockQRScan() {
+  // اختيار طالب عشوائي للمحاكاة
+  const studentIds = Object.keys(students);
+  if (studentIds.length === 0) {
+    Swal.fire('لا يوجد طلاب', 'لا يوجد طلاب مسجلين في النظام', 'warning');
+    return;
+  }
+  
+  const randomId = studentIds[Math.floor(Math.random() * studentIds.length)];
+  processQRCodeScan(randomId);
+  Swal.close();
+}
+
+// دالة معالجة مسح QR Code
+function processQRCodeScan(studentId) {
+  if (!students[studentId]) {
+    Swal.fire('خطأ', 'كود الطالب غير صحيح', 'error');
+    return;
+  }
+
+  const student = students[studentId];
+  const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
+  const currentDate = new Date().toLocaleDateString('ar-EG');
+  
+  // تسجيل حضور الطالب
+  if (!student.attendance) {
+    student.attendance = {};
+  }
+  student.attendance[today] = 'حاضر';
+  
+  // تسجيل تاريخ الحضور
+  if (!student.attendanceDates) {
+    student.attendanceDates = [];
+  }
+  if (!student.attendanceDates.includes(currentDate)) {
+    student.attendanceDates.push(currentDate);
+  }
+  
+  // تحديد المجموعة (نفترض أن المجموعة مخزنة في خاصية group)
+  const group = student.group || 'default';
+  
+  // تحديد الطلاب الغائبين في نفس المجموعة
+  let absentStudents = [];
+  for (const [id, s] of Object.entries(students)) {
+    if (id !== studentId && s.group === group && (!s.attendance || s.attendance[today] !== 'حاضر')) {
+      if (!s.attendance) {
+        s.attendance = {};
+      }
+      s.attendance[today] = 'غائب';
+      
+      // تسجيل تاريخ الغياب
+      if (!s.absenceDates) {
+        s.absenceDates = [];
+      }
+      if (!s.absenceDates.includes(currentDate)) {
+        s.absenceDates.push(currentDate);
+      }
+      
+      absentStudents.push(s.name);
+    }
+  }
+  
+  // إرسال رسالة إلى ولي الأمر
+  if (student.phone) {
+    sendAttendanceSMS(student.phone, student.name, today, 'حاضر');
+  }
+  
+  // عرض النتيجة
+  let message = `تم تسجيل حضور الطالب ${student.name} (${studentId})`;
+  if (absentStudents.length > 0) {
+    message += `<br><br>تم تسجيل الغياب التلقائي للطلاب التاليين في نفس المجموعة (${group}):<br>`;
+    message += absentStudents.join('<br>');
+  }
+  
+  Swal.fire({
+    title: 'تم تسجيل الحضور',
+    html: message,
+    icon: 'success'
+  });
+  
+  // حفظ التغييرات وتحديث الواجهة
+  saveToGitHub();
+  updateStats();
+  renderStudentCards();
+}
+
+// دالة إرسال رسالة SMS (محاكاة)
+function sendAttendanceSMS(phone, studentName, day, status) {
+  // في التطبيق الحقيقي، يمكنك استخدام خدمة مثل Twilio أو أي مزود SMS
+  console.log(`إرسال SMS إلى ${phone}:`);
+  console.log(`تم تسجيل ${status} للطالب ${studentName} يوم ${day}`);
+  
+  // محاكاة إرسال رسالة واتساب
+  const whatsappLink = `https://wa.me/${phone}?text=تم%20تسجيل%20${encodeURIComponent(status)}%20للطالب%20${encodeURIComponent(studentName)}%20يوم%20${encodeURIComponent(day)}`;
+  
+  // يمكن فتح نافذة جديدة لإرسال الرسالة (في بيئة حقيقية)
+  // window.open(whatsappLink, '_blank');
+}
+
 // مشاركة بيانات الطالب عبر واتساب
 function shareStudentViaWhatsapp(id) {
   const student = students[id];
@@ -2627,6 +2793,7 @@ function shareStudentViaWhatsapp(id) {
   shareText += `الكود: ${id}\n`;
   shareText += `الصف: ${student.main}\n`;
   if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
+  if (student.group) shareText += `المجموعة: ${student.group}\n`;
   if (student.info) shareText += `المستوى: ${student.info}\n`;
   
   const encodedText = encodeURIComponent(shareText);
@@ -2641,6 +2808,7 @@ function shareStudentViaTelegram(id) {
   shareText += `الكود: ${id}\n`;
   shareText += `الصف: ${student.main}\n`;
   if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
+  if (student.group) shareText += `المجموعة: ${student.group}\n`;
   if (student.info) shareText += `المستوى: ${student.info}\n`;
   
   const encodedText = encodeURIComponent(shareText);
@@ -2656,6 +2824,7 @@ function shareStudent(id) {
   shareText += `الكود: ${id}\n`;
   shareText += `الصف: ${student.main}\n`;
   if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
+  if (student.group) shareText += `المجموعة: ${student.group}\n`;
   if (student.info) shareText += `المستوى: ${student.info}\n`;
   
   Swal.fire({
@@ -2793,11 +2962,30 @@ function saveAttendance() {
   
   // جمع بيانات الحضور من النافذة المنبثقة
   const attendanceData = {};
+  const currentDate = new Date().toLocaleDateString('ar-EG');
+  
   document.querySelectorAll('.day-item').forEach(item => {
     const day = item.querySelector('div:first-child').textContent;
     const status = item.dataset.status || item.classList.contains('present') ? 'حاضر' : 
                   item.classList.contains('absent') ? 'غائب' : '-';
     attendanceData[day] = status;
+    
+    // تسجيل تواريخ الحضور/الغياب
+    if (status === 'حاضر') {
+      if (!students[currentPopupStudentId].attendanceDates) {
+        students[currentPopupStudentId].attendanceDates = [];
+      }
+      if (!students[currentPopupStudentId].attendanceDates.includes(currentDate)) {
+        students[currentPopupStudentId].attendanceDates.push(currentDate);
+      }
+    } else if (status === 'غائب') {
+      if (!students[currentPopupStudentId].absenceDates) {
+        students[currentPopupStudentId].absenceDates = [];
+      }
+      if (!students[currentPopupStudentId].absenceDates.includes(currentDate)) {
+        students[currentPopupStudentId].absenceDates.push(currentDate);
+      }
+    }
   });
   
   // تحديث بيانات الطالب
@@ -3241,6 +3429,7 @@ function saveStudent() {
     main: grade,
     info: level || '',
     phone: phone || '',
+    group: grade, // استخدام الصف كمجموعة افتراضية
     _file: currentDataFile
   };
   
@@ -4078,11 +4267,11 @@ function exportData(format) {
     mimeType = 'application/json';
   } else if (format === 'csv') {
     // تحويل البيانات إلى CSV
-    let csv = 'كود الطالب,الاسم,الصف,المستوى,رقم ولي الأمر\n';
+    let csv = 'كود الطالب,الاسم,الصف,المستوى,رقم ولي الأمر,المجموعة\n';
     
     for (let id in students) {
       const s = students[id];
-      csv += `"${id}","${s.name}","${s.main}","${s.info || ''}","${s.phone || ''}"\n`;
+      csv += `"${id}","${s.name}","${s.main}","${s.info || ''}","${s.phone || ''}","${s.group || ''}"\n`;
     }
     
     data = csv;
@@ -4106,12 +4295,20 @@ function exportData(format) {
 }
 
 function generateQRCode(id, phone) {
-  // إنشاء QR Code برقم الهاتف
+  const student = students[id];
+  const group = student.group || 'default';
+  
+  // إنشاء QR Code يحتوي على معلومات الحضور والمجموعة
   const qrCodeDiv = document.getElementById(`qr-code-${id}`);
   qrCodeDiv.innerHTML = '';
   
   new QRCode(qrCodeDiv, {
-    text: `https://wa.me/${phone}?text=حاضر`,
+    text: JSON.stringify({
+      id: id,
+      phone: phone,
+      action: 'attendance',
+      group: group
+    }),
     width: 150,
     height: 150,
     colorDark: "#000000",
@@ -4124,7 +4321,12 @@ function generateQRCode(id, phone) {
   if (cardQrCodeDiv) {
     cardQrCodeDiv.innerHTML = '';
     new QRCode(cardQrCodeDiv, {
-      text: `https://wa.me/${phone}?text=حاضر`,
+      text: JSON.stringify({
+        id: id,
+        phone: phone,
+        action: 'attendance',
+        group: group
+      }),
       width: 100,
       height: 100,
       colorDark: "#000000",
@@ -4133,7 +4335,7 @@ function generateQRCode(id, phone) {
     });
   }
   
-  showSuccess('تم إنشاء QR Code بنجاح');
+  showSuccess('تم إنشاء QR Code بنجاح مع معلومات المجموعة');
 }
 
 function showLoading(show, element = null) {
