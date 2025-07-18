@@ -2649,16 +2649,16 @@ function generateStudentIdCard(id, student) {
   `;
 }
 
-// دالة مسح QR Code
+// دالة تشغيل مسح QR Code
 function scanQRCode(studentId = null) {
   Swal.fire({
     title: 'مسح QR Code',
     html: `
       <div style="text-align:center;">
         <p>يتم الآن تشغيل الكاميرا لمسح QR Code</p>
-        <video id="qr-scanner" style="width:100%; max-width:400px; margin:10px auto; background:#000;" autoplay></video>
+        <video id="qr-scanner" style="width:100%; max-width:400px; background:#000;" autoplay></video>
         <canvas id="qr-canvas" style="display:none;"></canvas>
-        <p>أو أدخل كود الطالب يدوياً:</p>
+        <p>أو أدخل كود الطالب يدويًا:</p>
         <input type="text" id="manualStudentId" class="swal2-input" placeholder="كود الطالب" value="${studentId || ''}">
       </div>
     `,
@@ -2700,51 +2700,85 @@ function scanQRCode(studentId = null) {
       const video = document.getElementById('qr-scanner');
       stopCamera(video);
     }
+  }).then(result => {
+    if (result.dismiss === Swal.DismissReason.cancel) {
+      const manualId = document.getElementById('manualStudentId').value.trim();
+      if (manualId) {
+        handleScannedCode(manualId);
+      }
+    }
   });
 }
 
-// إيقاف الكاميرا
+// دالة إيقاف الكاميرا
 function stopCamera(video) {
-  if (video && video.srcObject) {
-    video.srcObject.getTracks().forEach(track => track.stop());
+  const stream = video.srcObject;
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
     video.srcObject = null;
   }
 }
 
-// دالة بعد قراءة الكود (يمكن تعديلها حسب الاستخدام)
+// دالة التعامل مع الكود المقروء
 function handleScannedCode(data) {
-  console.log('تم قراءة الكود:', data);
-  // هنا يمكنك تنفيذ أي شيء بعد قراءة QR، مثلاً:
-  // fetchStudentInfo(data); أو فتح صفحة الطالب
-}
-
-
-
-// دالة محاكاة مسح QR Code
-function mockQRScan() {
-  // اختيار طالب عشوائي للمحاكاة
-  const studentIds = Object.keys(students);
-  if (studentIds.length === 0) {
-    Swal.fire('لا يوجد طلاب', 'لا يوجد طلاب مسجلين في النظام', 'warning');
-    return;
-  }
-  
-  const randomId = studentIds[Math.floor(Math.random() * studentIds.length)];
-  processQRCodeScan(randomId);
-  Swal.close();
-}
-
-// دالة معالجة مسح QR Code
-function processQRCodeScan(studentId) {
+  const studentId = data.trim();
   if (!students[studentId]) {
     Swal.fire('خطأ', 'كود الطالب غير صحيح', 'error');
     return;
   }
 
+  processQRCodeScan(studentId);
+}
+
+// دالة تسجيل الحضور وإرسال إشعار واتساب
+function processQRCodeScan(studentId) {
   const student = students[studentId];
   const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
   const currentDate = new Date().toLocaleDateString('ar-EG');
-  
+
+  // تسجيل الحضور
+  if (!student.attendance) student.attendance = {};
+  student.attendance[today] = 'حاضر';
+
+  if (!student.attendanceDates) student.attendanceDates = [];
+  if (!student.attendanceDates.includes(currentDate)) {
+    student.attendanceDates.push(currentDate);
+  }
+
+  // حفظ الحضور (مثلاً في localStorage - اختياري)
+  localStorage.setItem('students', JSON.stringify(students));
+
+  // إرسال إشعار
+  if (student.phone) {
+    sendAttendanceToWhatsApp(student.phone, student.name, today);
+  } else {
+    Swal.fire({
+      title: 'تم تسجيل الحضور',
+      html: `تم تسجيل حضور الطالب <b>${student.name}</b> (${studentId})<br>⚠️ لا يوجد رقم هاتف.`,
+      icon: 'success'
+    });
+  }
+}
+
+// إرسال إشعار واتساب
+function sendAttendanceToWhatsApp(phoneNumber, studentName, day) {
+  const cleanPhone = phoneNumber.replace(/[\s-]/g, '');
+  const message = `📚 تم تسجيل حضور الطالب ${studentName} يوم ${day}`;
+  const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+  Swal.fire({
+    title: 'تم تسجيل الحضور',
+    html: `✅ تم تسجيل حضور الطالب <b>${studentName}</b><br>📲 سيتم فتح واتساب لإرسال إشعار.`,
+    icon: 'success',
+    showCancelButton: true,
+    confirmButtonText: 'فتح واتساب',
+    cancelButtonText: 'إلغاء'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.open(whatsappLink, '_blank');
+    }
+  });
+}
   // تسجيل حضور الطالب
   if (!student.attendance) {
     student.attendance = {};
@@ -2783,10 +2817,7 @@ function processQRCodeScan(studentId) {
     }
   }
   
-  // إرسال رسالة إلى ولي الأمر
-  if (student.phone) {
-    sendAttendanceSMS(student.phone, student.name, today, 'حاضر');
-  }
+
   
   // عرض النتيجة
   let message = `تم تسجيل حضور الطالب ${student.name} (${studentId})`;
@@ -2805,19 +2836,19 @@ function processQRCodeScan(studentId) {
   saveToGitHub();
   updateStats();
   renderStudentCards();
-}
 
-// دالة إرسال رسالة SMS (محاكاة)
-function sendAttendanceSMS(phone, studentName, day, status) {
-  // في التطبيق الحقيقي، يمكنك استخدام خدمة مثل Twilio أو أي مزود SMS
-  console.log(`إرسال SMS إلى ${phone}:`);
-  console.log(`تم تسجيل ${status} للطالب ${studentName} يوم ${day}`);
-  
-  // محاكاة إرسال رسالة واتساب
-  const whatsappLink = `https://wa.me/${phone}?text=تم%20تسجيل%20${encodeURIComponent(status)}%20للطالب%20${encodeURIComponent(studentName)}%20يوم%20${encodeURIComponent(day)}`;
-  
-  // يمكن فتح نافذة جديدة لإرسال الرسالة (في بيئة حقيقية)
-  // window.open(whatsappLink, '_blank');
+
+// دالة إرسال رسالة  (محاكاة)
+function sendAttendanceToParent(phoneNumber, studentName, day) {
+  const status = "حاضر";
+  const message = `تم تسجيل ${status} للطالب ${studentName} يوم ${day}`;
+  const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+  // فتح رابط واتساب في تبويب جديد
+  window.open(whatsappLink, '_blank');
+
+  // لأغراض التتبع في الكونسول (اختياري)
+  console.log(`تم إرسال رسالة إلى ولي الأمر: ${message}`);
 }
 
 // مشاركة بيانات الطالب عبر واتساب
