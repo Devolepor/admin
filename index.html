@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
@@ -2646,44 +2647,49 @@ function generateStudentIdCard(id, student) {
 
 // دالة مسح QR Code
 function scanQRCode(studentId = null) {
-  // هذه دالة محاكاة للماسح الضوئي الفعلي
-  // في التطبيق الحقيقي، ستستخدم مكتبة مثل Instascan أو ZXing
   Swal.fire({
     title: 'مسح QR Code',
     html: `
       <div style="text-align:center;">
         <p>يتم الآن تشغيل الكاميرا لمسح QR Code</p>
-        <div id="scanner-placeholder" style="width:300px; height:300px; background:#eee; margin:10px auto; display:flex; align-items:center; justify-content:center;">
-          <i class="fas fa-camera" style="font-size:50px; color:#999;"></i>
-        </div>
+        <video id="qr-scanner" style="width:100%; max-width:400px; margin:10px auto; background:#000;"></video>
+        <canvas id="qr-canvas" style="display:none;"></canvas>
         <p>أو أدخل كود الطالب يدوياً:</p>
         <input type="text" id="manualStudentId" class="swal2-input" placeholder="كود الطالب" value="${studentId || ''}">
       </div>
     `,
     showCancelButton: true,
-    confirmButtonText: 'تم المسح',
+    confirmButtonText: 'إيقاف المسح',
     cancelButtonText: 'إلغاء',
-    preConfirm: () => {
-      const manualId = document.getElementById('manualStudentId').value.trim();
-      if (manualId) {
-        processQRCodeScan(manualId);
-      }
+    didOpen: () => {
+      const videoElement = document.getElementById('qr-scanner');
+      const canvasElement = document.getElementById('qr-canvas');
+      const canvas = canvasElement.getContext('2d');
+      
+      // بدء تشغيل الكاميرا
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+          videoElement.srcObject = stream;
+          videoElement.play();
+          
+          // بدء مسح QR Code (هنا تحتاج إلى مكتبة لتحليل الصور)
+          startQRScan(videoElement, canvasElement, canvas);
+        })
+        .catch(function(err) {
+          console.error("خطأ الكاميرا: ", err);
+          Swal.fire('خطأ', 'لا يمكن الوصول إلى الكاميرا: ' + err.message, 'error');
+          document.getElementById('manualStudentId').focus();
+        });
     },
-    onOpen: () => {
-      // محاكاة مسح QR Code بعد 3 ثواني
-      setTimeout(() => {
-        // في التطبيق الحقيقي، سيتم استدعاء processQRCodeScan عند مسح الكود فعلياً
-        // هنا نعرض زر محاكاة للمسح
-        const scannerDiv = document.getElementById('scanner-placeholder');
-        scannerDiv.innerHTML = `
-          <button class="btn btn-success" onclick="mockQRScan()" style="padding:10px 20px;">
-            <i class="fas fa-camera"></i> محاكاة مسح QR Code
-          </button>
-        `;
-      }, 1000);
+    willClose: () => {
+      const videoElement = document.getElementById('qr-scanner');
+      if (videoElement.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop());
+      }
     }
   });
 }
+
 
 // دالة محاكاة مسح QR Code
 function mockQRScan() {
@@ -4388,4 +4394,4 @@ if (localStorage.getItem('isLoggedIn') === 'true') {
 }
 </script>
 </body>
-</html>
+</html> 
