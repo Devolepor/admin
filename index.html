@@ -2042,7 +2042,6 @@ let allStudentsData = {}; // لتخزين جميع بيانات الطلاب م�
 let currentDataFile = "students.json"; // الملف الحالي المستخدم للتخزين
 let currentPopupStudentId = null;
 
-
 const grades = [
   "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
   "الصف الرابع الابتدائي", "الصف الخامس الابتدائي", "الصف السادس الابتدائي",
@@ -3050,6 +3049,9 @@ function saveAttendance() {
   
   // تحديث الإحصائيات
   updateStats();
+  
+  // حفظ التغييرات على GitHub
+  saveToGitHub();
 }
 
 function closeAttendancePopup() {
@@ -3140,6 +3142,9 @@ function saveFees() {
   
   // تحديث الإحصائيات
   updateStats();
+  
+  // حفظ التغييرات على GitHub
+  saveToGitHub();
 }
 
 function closeFeesPopup() {
@@ -3540,10 +3545,18 @@ function completeStudentSave(id, student) {
   // حفظ التغييرات على GitHub
   saveToGitHub();
   
-  // إذا كان هناك رقم هاتف، فتح واتساب مع رسالة التعديل
+  // إرسال بيانات الطالب عبر واتساب إذا كان هناك رقم هاتف
   if (student.phone) {
-    const message = `تم تعديل بيانات الطالب ${student.name}:\n\n`;
-    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(message)}`;
+    const message = `تم تسجيل الطالب بنجاح:\n\n`;
+    const studentInfo = `
+      الاسم: ${student.name}
+      الكود: ${id}
+      الصف: ${student.main}
+      المستوى: ${student.info || 'غير محدد'}
+      رقم ولي الأمر: ${student.phone}
+    `;
+    
+    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(message + studentInfo)}`;
     window.open(whatsappUrl, '_blank');
   }
   
