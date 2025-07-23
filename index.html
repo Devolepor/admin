@@ -2042,6 +2042,7 @@ let allStudentsData = {}; // لتخزين جميع بيانات الطلاب م�
 let currentDataFile = "students.json"; // الملف الحالي المستخدم للتخزين
 let currentPopupStudentId = null;
 
+
 const grades = [
   "الصف الأول الابتدائي", "الصف الثاني الابتدائي", "الصف الثالث الابتدائي",
   "الصف الرابع الابتدائي", "الصف الخامس الابتدائي", "الصف السادس الابتدائي",
@@ -2719,8 +2720,6 @@ function handleScannedCode(data) {
   // fetchStudentInfo(data); أو فتح صفحة الطالب
 }
 
-
-
 // دالة محاكاة مسح QR Code
 function mockQRScan() {
   // اختيار طالب عشوائي للمحاكاة
@@ -2996,6 +2995,10 @@ function selectDayStatus(day, element) {
 function saveAttendance() {
   if (!currentPopupStudentId) return;
   
+  const student = students[currentPopupStudentId];
+  const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
+  let attendanceMessage = '';
+  
   // جمع بيانات الحضور من النافذة المنبثقة
   const attendanceData = {};
   const currentDate = new Date().toLocaleDateString('ar-EG');
@@ -3008,24 +3011,29 @@ function saveAttendance() {
     
     // تسجيل تواريخ الحضور/الغياب
     if (status === 'حاضر') {
-      if (!students[currentPopupStudentId].attendanceDates) {
-        students[currentPopupStudentId].attendanceDates = [];
+      if (!student.attendanceDates) {
+        student.attendanceDates = [];
       }
-      if (!students[currentPopupStudentId].attendanceDates.includes(currentDate)) {
-        students[currentPopupStudentId].attendanceDates.push(currentDate);
+      if (!student.attendanceDates.includes(currentDate)) {
+        student.attendanceDates.push(currentDate);
+      }
+      
+      // إضافة رسالة الحضور ليوم اليوم فقط
+      if (day === today) {
+        attendanceMessage = `تم تسجيل حضور الطالب ${student.name} يوم ${today}`;
       }
     } else if (status === 'غائب') {
-      if (!students[currentPopupStudentId].absenceDates) {
-        students[currentPopupStudentId].absenceDates = [];
+      if (!student.absenceDates) {
+        student.absenceDates = [];
       }
-      if (!students[currentPopupStudentId].absenceDates.includes(currentDate)) {
-        students[currentPopupStudentId].absenceDates.push(currentDate);
+      if (!student.absenceDates.includes(currentDate)) {
+        student.absenceDates.push(currentDate);
       }
     }
   });
   
   // تحديث بيانات الطالب
-  students[currentPopupStudentId].attendance = attendanceData;
+  student.attendance = attendanceData;
   allStudentsData[currentPopupStudentId].attendance = attendanceData;
   
   // إغلاق النافذة المنبثقة
@@ -3033,6 +3041,12 @@ function saveAttendance() {
   
   // عرض رسالة نجاح
   showSuccess('تم تحديث بيانات الحضور بنجاح');
+  
+  // إذا كان هناك رقم هاتف ورسالة حضور، فتح واتساب
+  if (student.phone && attendanceMessage) {
+    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(attendanceMessage)}`;
+    window.open(whatsappUrl, '_blank');
+  }
   
   // تحديث الإحصائيات
   updateStats();
@@ -3091,16 +3105,25 @@ function toggleMonthPayment(month, element) {
 function saveFees() {
   if (!currentPopupStudentId) return;
   
+  const student = students[currentPopupStudentId];
+  const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long' });
+  let feesMessage = '';
+  
   // جمع بيانات المصروفات من النافذة المنبثقة
   const feesData = {};
   document.querySelectorAll('.month-item').forEach(item => {
     const month = item.textContent.replace('<i class="fas fa-check"></i>', '').replace('<i class="fas fa-times"></i>', '').trim();
     const isPaid = item.classList.contains('paid');
     feesData[month] = isPaid;
+    
+    // إضافة رسالة الدفع لشهر الحالي فقط
+    if (month === currentMonth && isPaid) {
+      feesMessage = `تم تسديد مصروفات شهر ${currentMonth} للطالب ${student.name}`;
+    }
   });
   
   // تحديث بيانات الطالب
-  students[currentPopupStudentId].fees = feesData;
+  student.fees = feesData;
   allStudentsData[currentPopupStudentId].fees = feesData;
   
   // إغلاق النافذة المنبثقة
@@ -3108,6 +3131,12 @@ function saveFees() {
   
   // عرض رسالة نجاح
   showSuccess('تم تحديث بيانات المصروفات بنجاح');
+  
+  // إذا كان هناك رقم هاتف ورسالة دفع، فتح واتساب
+  if (student.phone && feesMessage) {
+    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(feesMessage)}`;
+    window.open(whatsappUrl, '_blank');
+  }
   
   // تحديث الإحصائيات
   updateStats();
@@ -3510,6 +3539,13 @@ function completeStudentSave(id, student) {
   
   // حفظ التغييرات على GitHub
   saveToGitHub();
+  
+  // إذا كان هناك رقم هاتف، فتح واتساب مع رسالة التعديل
+  if (student.phone) {
+    const message = `تم تعديل بيانات الطالب ${student.name}:\n\n`;
+    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  }
   
   // عرض تفاصيل الطالب مع البطاقة والملاحظات
   setTimeout(() => {
