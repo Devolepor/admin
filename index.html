@@ -2055,6 +2055,83 @@ const levels = ["ضعيف", "مقبول", "جيد", "جيد جدا", "ممتاز
 const weekDays = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 const months = ["أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر", "يناير", "فبراير", "مارس", "أبريل"];
 
+// دالة لإرسال إشعار واتساب
+function sendWhatsAppNotification(phone, message) {
+  if (!phone) return;
+  
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+}
+
+// دالة لإرسال إشعار عند إضافة طالب جديد
+function sendNewStudentNotification(studentId, studentData) {
+  const message = `تم تسجيل الطالب الجديد بنجاح 🎉\n\n`
+               + `الاسم: ${studentData.name}\n`
+               + `الكود: ${studentId}\n`
+               + `الصف: ${studentData.main}\n`
+               + `المستوى: ${studentData.info || 'غير محدد'}\n\n`
+               + `شكراً لتسجيلك معنا!`;
+  
+  if (studentData.phone) {
+    sendWhatsAppNotification(studentData.phone, message);
+  }
+}
+
+// دالة لإرسال إشعار عند تسجيل الحضور/الغياب
+function sendAttendanceNotification(studentId, studentData, day, status) {
+  const message = `تحديث حالة الحضور 📅\n\n`
+               + `الطالب: ${studentData.name}\n`
+               + `اليوم: ${day}\n`
+               + `الحالة: ${status === 'حاضر' ? 'حاضر ✅' : 'غائب ❌'}\n\n`
+               + `شكراً لمتابعتكم`;
+  
+  if (studentData.phone) {
+    sendWhatsAppNotification(studentData.phone, message);
+  }
+}
+
+// دالة لإرسال إشعار عند تسديد المصروفات
+function sendFeesNotification(studentId, studentData, month, isPaid) {
+  const message = `تحديث حالة المصروفات 💰\n\n`
+               + `الطالب: ${studentData.name}\n`
+               + `الشهر: ${month}\n`
+               + `الحالة: ${isPaid ? 'تم السداد ✅' : 'غير مسددة ❌'}\n\n`
+               + `شكراً لمتابعتكم`;
+  
+  if (studentData.phone) {
+    sendWhatsAppNotification(studentData.phone, message);
+  }
+}
+
+// دالة لإرسال إشعار عند إضافة ملاحظة
+function sendNotesNotification(studentId, studentData, notes) {
+  const message = `ملاحظة جديدة للطالب 📝\n\n`
+               + `الطالب: ${studentData.name}\n`
+               + `الملاحظة: ${notes || 'لا توجد ملاحظات'}\n\n`
+               + `شكراً لمتابعتكم`;
+  
+  if (studentData.phone) {
+    sendWhatsAppNotification(studentData.phone, message);
+  }
+}
+
+// دالة لإرسال إشعار عند تعديل بيانات الطالب
+function sendUpdateNotification(studentId, studentData, updatedFields) {
+  let message = `تم تحديث بيانات الطالب 🔄\n\n`
+              + `الطالب: ${studentData.name}\n`
+              + `التغييرات:\n`;
+  
+  for (const [field, value] of Object.entries(updatedFields)) {
+    message += `${field}: ${value}\n`;
+  }
+  
+  message += `\nشكراً لمتابعتكم`;
+  
+  if (studentData.phone) {
+    sendWhatsAppNotification(studentData.phone, message);
+  }
+}
+
 // Check for saved theme preference
 if (localStorage.getItem("theme") === "dark") {
   document.body.classList.add("dark-mode");
@@ -2784,7 +2861,7 @@ function processQRCodeScan(studentId) {
   
   // إرسال رسالة إلى ولي الأمر
   if (student.phone) {
-    sendAttendanceSMS(student.phone, student.name, today, 'حاضر');
+    sendAttendanceNotification(studentId, student, today, 'حاضر');
   }
   
   // عرض النتيجة
@@ -2804,352 +2881,6 @@ function processQRCodeScan(studentId) {
   saveToGitHub();
   updateStats();
   renderStudentCards();
-}
-
-// دالة إرسال رسالة SMS (محاكاة)
-function sendAttendanceSMS(phone, studentName, day, status) {
-  // في التطبيق الحقيقي، يمكنك استخدام خدمة مثل Twilio أو أي مزود SMS
-  console.log(`إرسال SMS إلى ${phone}:`);
-  console.log(`تم تسجيل ${status} للطالب ${studentName} يوم ${day}`);
-  
-  // محاكاة إرسال رسالة واتساب
-  const whatsappLink = `https://wa.me/${phone}?text=تم%20تسجيل%20${encodeURIComponent(status)}%20للطالب%20${encodeURIComponent(studentName)}%20يوم%20${encodeURIComponent(day)}`;
-  
-  // يمكن فتح نافذة جديدة لإرسال الرسالة (في بيئة حقيقية)
-  // window.open(whatsappLink, '_blank');
-}
-
-// مشاركة بيانات الطالب عبر واتساب
-function shareStudentViaWhatsapp(id) {
-  const student = students[id];
-  let shareText = `بيانات الطالب:\n\n`;
-  shareText += `الاسم: ${student.name}\n`;
-  shareText += `الكود: ${id}\n`;
-  shareText += `الصف: ${student.main}\n`;
-  if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
-  if (student.group) shareText += `المجموعة: ${student.group}\n`;
-  if (student.info) shareText += `المستوى: ${student.info}\n`;
-  
-  const encodedText = encodeURIComponent(shareText);
-  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
-}
-
-// مشاركة بيانات الطالب عبر ماسنجر
-function shareStudentViaTelegram(id) {
-  const student = students[id];
-  let shareText = `بيانات الطالب:\n\n`;
-  shareText += `الاسم: ${student.name}\n`;
-  shareText += `الكود: ${id}\n`;
-  shareText += `الصف: ${student.main}\n`;
-  if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
-  if (student.group) shareText += `المجموعة: ${student.group}\n`;
-  if (student.info) shareText += `المستوى: ${student.info}\n`;
-  
-  const encodedText = encodeURIComponent(shareText);
-  window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
-}
-
-// مشاركة بيانات الطالب
-function shareStudent(id) {
-  const student = students[id];
-  
-  let shareText = `بيانات الطالب:\n\n`;
-  shareText += `الاسم: ${student.name}\n`;
-  shareText += `الكود: ${id}\n`;
-  shareText += `الصف: ${student.main}\n`;
-  if (student.phone) shareText += `رقم ولي الأمر: ${student.phone}\n`;
-  if (student.group) shareText += `المجموعة: ${student.group}\n`;
-  if (student.info) shareText += `المستوى: ${student.info}\n`;
-  
-  Swal.fire({
-    title: 'مشاركة بيانات الطالب',
-    html: `
-      <div style="text-align: right;">
-        <p>اختر طريقة المشاركة:</p>
-        <div class="share-buttons">
-          <a href="https://wa.me/?text=${encodeURIComponent(shareText)}" 
-             target="_blank" class="share-btn whatsapp">
-            <i class="fab fa-whatsapp"></i> واتساب
-          </a>
-          <a href="https://t.me/share/url?url=&text=${encodeURIComponent(shareText)}" 
-             target="_blank" class="share-btn telegram">
-            <i class="fab fa-telegram-plane"></i> ماسنجر
-          </a>
-        </div>
-      </div>
-    `,
-    showConfirmButton: false
-  });
-}
-
-// تحميل بطاقة الطالب كصورة
-function downloadStudentCard(id) {
-  const element = document.getElementById(`student-card-${id}`);
-  if (!element) {
-    showError('لا يمكن العثور على بطاقة الطالب');
-    return;
-  }
-  
-  showLoading(true);
-  
-  html2canvas(element, {
-    scale: 2,
-    logging: false,
-    useCORS: true,
-    allowTaint: true
-  }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = `بطاقة_الطالب_${id}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-    showLoading(false);
-  }).catch(err => {
-    showLoading(false);
-    showError('حدث خطأ أثناء إنشاء البطاقة: ' + err.message);
-  });
-}
-
-// وظائف جديدة للنوافذ المنبثقة
-function showAttendancePopup(id) {
-  currentPopupStudentId = id;
-  const student = students[id];
-  
-  // إنشاء محتوى النافذة المنبثقة
-  let html = `
-    <h4 style="margin-bottom: 15px;">تسجيل الحضور والغياب للطالب: ${student.name}</h4>
-    <p style="margin-bottom: 15px;">اختر حالة الحضور لكل يوم:</p>
-    
-    <div class="day-selector">
-  `;
-  
-  // إضافة خيارات الأيام
-  weekDays.forEach(day => {
-    const status = student.attendance?.[day] || '-';
-    html += `
-      <div class="day-item ${status === 'حاضر' ? 'present' : ''} ${status === 'غائب' ? 'absent' : ''}" 
-           onclick="selectDayStatus('${day}', this)">
-        <div>${day}</div>
-        <div>
-          ${status === 'حاضر' ? '<i class="fas fa-check-circle"></i> حاضر' : ''}
-          ${status === 'غائب' ? '<i class="fas fa-times-circle"></i> غائب' : ''}
-          ${status === '-' ? '<i class="fas fa-minus-circle"></i> غير محدد' : ''}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div>`;
-  
-  document.getElementById('attendancePopupBody').innerHTML = html;
-  document.getElementById('attendancePopup').style.display = 'flex';
-}
-
-function selectDayStatus(day, element) {
-  // إزالة التحديد من جميع العناصر
-  document.querySelectorAll('.day-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-  
-  // إضافة التحديد للعنصر المختار
-  element.classList.add('selected');
-  
-  // إنشاء قائمة بالحالات الممكنة
-  const statuses = ['حاضر', 'غائب', '-'];
-  let currentIndex = 0;
-  
-  // تحديد الحالة الحالية
-  if (element.classList.contains('present')) {
-    currentIndex = 0;
-  } else if (element.classList.contains('absent')) {
-    currentIndex = 1;
-  } else {
-    currentIndex = 2;
-  }
-  
-  // الانتقال للحالة التالية
-  const nextIndex = (currentIndex + 1) % statuses.length;
-  const nextStatus = statuses[nextIndex];
-  
-  // تحديث المظهر بناءً على الحالة الجديدة
-  element.classList.remove('present', 'absent');
-  element.innerHTML = `
-    <div>${day}</div>
-    <div>
-      ${nextStatus === 'حاضر' ? '<i class="fas fa-check-circle"></i> حاضر' : ''}
-      ${nextStatus === 'غائب' ? '<i class="fas fa-times-circle"></i> غائب' : ''}
-      ${nextStatus === '-' ? '<i class="fas fa-minus-circle"></i> غير محدد' : ''}
-    </div>
-  `;
-  
-  if (nextStatus === 'حاضر') {
-    element.classList.add('present');
-  } else if (nextStatus === 'غائب') {
-    element.classList.add('absent');
-  }
-  
-  // تخزين الحالة المحددة في سمة مخصصة
-  element.dataset.status = nextStatus;
-}
-
-function saveAttendance() {
-  if (!currentPopupStudentId) return;
-  
-  const student = students[currentPopupStudentId];
-  const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
-  let attendanceMessage = '';
-  
-  // جمع بيانات الحضور من النافذة المنبثقة
-  const attendanceData = {};
-  const currentDate = new Date().toLocaleDateString('ar-EG');
-  
-  document.querySelectorAll('.day-item').forEach(item => {
-    const day = item.querySelector('div:first-child').textContent;
-    const status = item.dataset.status || item.classList.contains('present') ? 'حاضر' : 
-                  item.classList.contains('absent') ? 'غائب' : '-';
-    attendanceData[day] = status;
-    
-    // تسجيل تواريخ الحضور/الغياب
-    if (status === 'حاضر') {
-      if (!student.attendanceDates) {
-        student.attendanceDates = [];
-      }
-      if (!student.attendanceDates.includes(currentDate)) {
-        student.attendanceDates.push(currentDate);
-      }
-      
-      // إضافة رسالة الحضور ليوم اليوم فقط
-      if (day === today) {
-        attendanceMessage = `تم تسجيل حضور الطالب ${student.name} يوم ${today}`;
-      }
-    } else if (status === 'غائب') {
-      if (!student.absenceDates) {
-        student.absenceDates = [];
-      }
-      if (!student.absenceDates.includes(currentDate)) {
-        student.absenceDates.push(currentDate);
-      }
-    }
-  });
-  
-  // تحديث بيانات الطالب
-  student.attendance = attendanceData;
-  allStudentsData[currentPopupStudentId].attendance = attendanceData;
-  
-  // إغلاق النافذة المنبثقة
-  closeAttendancePopup();
-  
-  // عرض رسالة نجاح
-  showSuccess('تم تحديث بيانات الحضور بنجاح');
-  
-  // إذا كان هناك رقم هاتف ورسالة حضور، فتح واتساب
-  if (student.phone && attendanceMessage) {
-    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(attendanceMessage)}`;
-    window.open(whatsappUrl, '_blank');
-  }
-  
-  // تحديث الإحصائيات
-  updateStats();
-  
-  // حفظ التغييرات على GitHub
-  saveToGitHub();
-}
-
-function closeAttendancePopup() {
-  document.getElementById('attendancePopup').style.display = 'none';
-  currentPopupStudentId = null;
-}
-
-function showFeesPopup(id) {
-  currentPopupStudentId = id;
-  const student = students[id];
-  
-  // إنشاء محتوى النافذة المنبثقة
-  let html = `
-    <h4 style="margin-bottom: 15px;">تسديد المصروفات للطالب: ${student.name}</h4>
-    <p style="margin-bottom: 15px;">حدد الأشهر المسددة:</p>
-    
-    <div class="month-selector">
-  `;
-  
-  // إضافة خيارات الأشهر
-  months.forEach(month => {
-    const isPaid = student.fees?.[month] || false;
-    html += `
-      <div class="month-item ${isPaid ? 'paid' : 'unpaid'}" 
-           onclick="toggleMonthPayment('${month}', this)">
-        ${month}
-        ${isPaid ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'}
-      </div>
-    `;
-  });
-  
-  html += `</div>`;
-  
-  document.getElementById('feesPopupBody').innerHTML = html;
-  document.getElementById('feesPopup').style.display = 'flex';
-}
-
-function toggleMonthPayment(month, element) {
-  // تبديل حالة الدفع
-  const isPaid = element.classList.contains('paid');
-  
-  if (isPaid) {
-    element.classList.remove('paid');
-    element.classList.add('unpaid');
-    element.innerHTML = `${month} <i class="fas fa-times"></i>`;
-  } else {
-    element.classList.remove('unpaid');
-    element.classList.add('paid');
-    element.innerHTML = `${month} <i class="fas fa-check"></i>`;
-  }
-}
-
-function saveFees() {
-  if (!currentPopupStudentId) return;
-  
-  const student = students[currentPopupStudentId];
-  const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long' });
-  let feesMessage = '';
-  
-  // جمع بيانات المصروفات من النافذة المنبثقة
-  const feesData = {};
-  document.querySelectorAll('.month-item').forEach(item => {
-    const month = item.textContent.replace('<i class="fas fa-check"></i>', '').replace('<i class="fas fa-times"></i>', '').trim();
-    const isPaid = item.classList.contains('paid');
-    feesData[month] = isPaid;
-    
-    // إضافة رسالة الدفع لشهر الحالي فقط
-    if (month === currentMonth && isPaid) {
-      feesMessage = `تم تسديد مصروفات شهر ${currentMonth} للطالب ${student.name}`;
-    }
-  });
-  
-  // تحديث بيانات الطالب
-  student.fees = feesData;
-  allStudentsData[currentPopupStudentId].fees = feesData;
-  
-  // إغلاق النافذة المنبثقة
-  closeFeesPopup();
-  
-  // عرض رسالة نجاح
-  showSuccess('تم تحديث بيانات المصروفات بنجاح');
-  
-  // إذا كان هناك رقم هاتف ورسالة دفع، فتح واتساب
-  if (student.phone && feesMessage) {
-    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(feesMessage)}`;
-    window.open(whatsappUrl, '_blank');
-  }
-  
-  // تحديث الإحصائيات
-  updateStats();
-  
-  // حفظ التغييرات على GitHub
-  saveToGitHub();
-}
-
-function closeFeesPopup() {
-  document.getElementById('feesPopup').style.display = 'none';
-  currentPopupStudentId = null;
 }
 
 function showTrash() {
@@ -3414,6 +3145,11 @@ function saveNotes() {
     }
     closeModal();
     showSuccess('تم حفظ الملاحظات بنجاح');
+    
+    // إرسال إشعار واتساب
+    if (students[currentStudentId].phone) {
+      sendNotesNotification(currentStudentId, students[currentStudentId], notes);
+    }
   }
 }
 
@@ -3503,20 +3239,27 @@ function saveStudent() {
     _file: currentDataFile
   };
   
+  // تحديد إذا كان هذا تعديلاً لطالب موجود
+  const isEdit = currentStudentId && students[currentStudentId];
+  
   // إضافة الصورة إذا كانت موجودة
   if (studentImageFile) {
     const reader = new FileReader();
     reader.onload = function(e) {
       student.image = e.target.result;
-      completeStudentSave(id, student);
+      completeStudentSave(id, student, isEdit);
     };
     reader.readAsDataURL(studentImageFile);
   } else {
-    completeStudentSave(id, student);
+    // الحفاظ على الصورة القديمة إذا كان تعديلاً ولم يتم تحميل صورة جديدة
+    if (isEdit && students[currentStudentId].image) {
+      student.image = students[currentStudentId].image;
+    }
+    completeStudentSave(id, student, isEdit);
   }
 }
 
-function completeStudentSave(id, student) {
+function completeStudentSave(id, student, isEdit) {
   // إذا كان هذا طالباً جديداً أو تم تغيير الكود
   if (!currentStudentId || currentStudentId !== id) {
     if (students[id] && !confirm(`هل تريد استبدال بيانات الطالب ${id}؟`)) {
@@ -3545,19 +3288,19 @@ function completeStudentSave(id, student) {
   // حفظ التغييرات على GitHub
   saveToGitHub();
   
-  // إرسال بيانات الطالب عبر واتساب إذا كان هناك رقم هاتف
-  if (student.phone) {
-    const message = `تم تسجيل الطالب بنجاح:\n\n`;
-    const studentInfo = `
-      الاسم: ${student.name}
-      الكود: ${id}
-      الصف: ${student.main}
-      المستوى: ${student.info || 'غير محدد'}
-      رقم ولي الأمر: ${student.phone}
-    `;
-    
-    const whatsappUrl = `https://wa.me/${student.phone}?text=${encodeURIComponent(message + studentInfo)}`;
-    window.open(whatsappUrl, '_blank');
+  // إرسال إشعار واتساب
+  if (isEdit) {
+    // إذا كان تعديلاً، أرسل إشعاراً بالتعديل
+    const updatedFields = {
+      'الاسم': student.name,
+      'الصف': student.main,
+      'المستوى': student.info || 'غير محدد',
+      'رقم ولي الأمر': student.phone || 'غير مسجل'
+    };
+    sendUpdateNotification(id, student, updatedFields);
+  } else {
+    // إذا كان طالباً جديداً، أرسل إشعاراً بالتسجيل
+    sendNewStudentNotification(id, student);
   }
   
   // عرض تفاصيل الطالب مع البطاقة والملاحظات
@@ -4455,6 +4198,247 @@ function showSuccess(message) {
     icon: 'success',
     confirmButtonText: 'حسناً'
   });
+}
+
+// وظائف جديدة للنوافذ المنبثقة
+function showAttendancePopup(id) {
+  currentPopupStudentId = id;
+  const student = students[id];
+  
+  // إنشاء محتوى النافذة المنبثقة
+  let html = `
+    <h4 style="margin-bottom: 15px;">تسجيل الحضور والغياب للطالب: ${student.name}</h4>
+    <p style="margin-bottom: 15px;">اختر حالة الحضور لكل يوم:</p>
+    
+    <div class="day-selector">
+  `;
+  
+  // إضافة خيارات الأيام
+  weekDays.forEach(day => {
+    const status = student.attendance?.[day] || '-';
+    html += `
+      <div class="day-item ${status === 'حاضر' ? 'present' : ''} ${status === 'غائب' ? 'absent' : ''}" 
+           onclick="selectDayStatus('${day}', this)">
+        <div>${day}</div>
+        <div>
+          ${status === 'حاضر' ? '<i class="fas fa-check-circle"></i> حاضر' : ''}
+          ${status === 'غائب' ? '<i class="fas fa-times-circle"></i> غائب' : ''}
+          ${status === '-' ? '<i class="fas fa-minus-circle"></i> غير محدد' : ''}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  
+  document.getElementById('attendancePopupBody').innerHTML = html;
+  document.getElementById('attendancePopup').style.display = 'flex';
+}
+
+function selectDayStatus(day, element) {
+  // إزالة التحديد من جميع العناصر
+  document.querySelectorAll('.day-item').forEach(item => {
+    item.classList.remove('selected');
+  });
+  
+  // إضافة التحديد للعنصر المختار
+  element.classList.add('selected');
+  
+  // إنشاء قائمة بالحالات الممكنة
+  const statuses = ['حاضر', 'غائب', '-'];
+  let currentIndex = 0;
+  
+  // تحديد الحالة الحالية
+  if (element.classList.contains('present')) {
+    currentIndex = 0;
+  } else if (element.classList.contains('absent')) {
+    currentIndex = 1;
+  } else {
+    currentIndex = 2;
+  }
+  
+  // الانتقال للحالة التالية
+  const nextIndex = (currentIndex + 1) % statuses.length;
+  const nextStatus = statuses[nextIndex];
+  
+  // تحديث المظهر بناءً على الحالة الجديدة
+  element.classList.remove('present', 'absent');
+  element.innerHTML = `
+    <div>${day}</div>
+    <div>
+      ${nextStatus === 'حاضر' ? '<i class="fas fa-check-circle"></i> حاضر' : ''}
+      ${nextStatus === 'غائب' ? '<i class="fas fa-times-circle"></i> غائب' : ''}
+      ${nextStatus === '-' ? '<i class="fas fa-minus-circle"></i> غير محدد' : ''}
+    </div>
+  `;
+  
+  if (nextStatus === 'حاضر') {
+    element.classList.add('present');
+  } else if (nextStatus === 'غائب') {
+    element.classList.add('absent');
+  }
+  
+  // تخزين الحالة المحددة في سمة مخصصة
+  element.dataset.status = nextStatus;
+}
+
+function saveAttendance() {
+  if (!currentPopupStudentId) return;
+  
+  const student = students[currentPopupStudentId];
+  const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long' });
+  let attendanceMessage = '';
+  
+  // جمع بيانات الحضور من النافذة المنبثقة
+  const attendanceData = {};
+  const currentDate = new Date().toLocaleDateString('ar-EG');
+  
+  document.querySelectorAll('.day-item').forEach(item => {
+    const day = item.querySelector('div:first-child').textContent;
+    const status = item.dataset.status || item.classList.contains('present') ? 'حاضر' : 
+                  item.classList.contains('absent') ? 'غائب' : '-';
+    attendanceData[day] = status;
+    
+    // تسجيل تواريخ الحضور/الغياب
+    if (status === 'حاضر') {
+      if (!student.attendanceDates) {
+        student.attendanceDates = [];
+      }
+      if (!student.attendanceDates.includes(currentDate)) {
+        student.attendanceDates.push(currentDate);
+      }
+      
+      // إضافة رسالة الحضور ليوم اليوم فقط
+      if (day === today) {
+        attendanceMessage = `تم تسجيل حضور الطالب ${student.name} يوم ${today}`;
+      }
+    } else if (status === 'غائب') {
+      if (!student.absenceDates) {
+        student.absenceDates = [];
+      }
+      if (!student.absenceDates.includes(currentDate)) {
+        student.absenceDates.push(currentDate);
+      }
+    }
+  });
+  
+  // تحديث بيانات الطالب
+  student.attendance = attendanceData;
+  allStudentsData[currentPopupStudentId].attendance = attendanceData;
+  
+  // إغلاق النافذة المنبثقة
+  closeAttendancePopup();
+  
+  // عرض رسالة نجاح
+  showSuccess('تم تحديث بيانات الحضور بنجاح');
+  
+  // إرسال إشعار واتساب
+  if (student.phone) {
+    sendAttendanceNotification(currentPopupStudentId, student, today, attendanceData[today] || '-');
+  }
+  
+  // تحديث الإحصائيات
+  updateStats();
+  
+  // حفظ التغييرات على GitHub
+  saveToGitHub();
+}
+
+function closeAttendancePopup() {
+  document.getElementById('attendancePopup').style.display = 'none';
+  currentPopupStudentId = null;
+}
+
+function showFeesPopup(id) {
+  currentPopupStudentId = id;
+  const student = students[id];
+  
+  // إنشاء محتوى النافذة المنبثقة
+  let html = `
+    <h4 style="margin-bottom: 15px;">تسديد المصروفات للطالب: ${student.name}</h4>
+    <p style="margin-bottom: 15px;">حدد الأشهر المسددة:</p>
+    
+    <div class="month-selector">
+  `;
+  
+  // إضافة خيارات الأشهر
+  months.forEach(month => {
+    const isPaid = student.fees?.[month] || false;
+    html += `
+      <div class="month-item ${isPaid ? 'paid' : 'unpaid'}" 
+           onclick="toggleMonthPayment('${month}', this)">
+        ${month}
+        ${isPaid ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'}
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  
+  document.getElementById('feesPopupBody').innerHTML = html;
+  document.getElementById('feesPopup').style.display = 'flex';
+}
+
+function toggleMonthPayment(month, element) {
+  // تبديل حالة الدفع
+  const isPaid = element.classList.contains('paid');
+  
+  if (isPaid) {
+    element.classList.remove('paid');
+    element.classList.add('unpaid');
+    element.innerHTML = `${month} <i class="fas fa-times"></i>`;
+  } else {
+    element.classList.remove('unpaid');
+    element.classList.add('paid');
+    element.innerHTML = `${month} <i class="fas fa-check"></i>`;
+  }
+}
+
+function saveFees() {
+  if (!currentPopupStudentId) return;
+  
+  const student = students[currentPopupStudentId];
+  const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long' });
+  let feesMessage = '';
+  
+  // جمع بيانات المصروفات من النافذة المنبثقة
+  const feesData = {};
+  document.querySelectorAll('.month-item').forEach(item => {
+    const month = item.textContent.replace('<i class="fas fa-check"></i>', '').replace('<i class="fas fa-times"></i>', '').trim();
+    const isPaid = item.classList.contains('paid');
+    feesData[month] = isPaid;
+    
+    // إضافة رسالة الدفع لشهر الحالي فقط
+    if (month === currentMonth && isPaid) {
+      feesMessage = `تم تسديد مصروفات شهر ${currentMonth} للطالب ${student.name}`;
+    }
+  });
+  
+  // تحديث بيانات الطالب
+  student.fees = feesData;
+  allStudentsData[currentPopupStudentId].fees = feesData;
+  
+  // إغلاق النافذة المنبثقة
+  closeFeesPopup();
+  
+  // عرض رسالة نجاح
+  showSuccess('تم تحديث بيانات المصروفات بنجاح');
+  
+  // إرسال إشعار واتساب
+  if (student.phone) {
+    sendFeesNotification(currentPopupStudentId, student, currentMonth, feesData[currentMonth] || false);
+  }
+  
+  // تحديث الإحصائيات
+  updateStats();
+  
+  // حفظ التغييرات على GitHub
+  saveToGitHub();
+}
+
+function closeFeesPopup() {
+  document.getElementById('feesPopup').style.display = 'none';
+  currentPopupStudentId = null;
 }
 
 // تحميل البيانات عند فتح الصفحة إذا كان المستخدم مسجلاً
